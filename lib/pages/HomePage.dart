@@ -19,7 +19,7 @@ class HomePage extends StatelessWidget {
         child: Column(
           children: [
             // Questa parte ora espande correttamente il GridView
-            Expanded(
+            /*Expanded(
               child: GridView.count(
                 crossAxisCount: 3,
                 padding: EdgeInsets.all(8),
@@ -58,6 +58,14 @@ class HomePage extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+*/
+            Row(
+              children: [
+                PlayerWidget(name: "aa", avatarUrl: "aa"),
+                PlayerWidget(name: "aa", avatarUrl: "aa"),
+                PlayerWidget(name: "aa", avatarUrl: "aa")
+              ],
             ),
 
             // Carte in basso – visibile perché fuori dal GridView

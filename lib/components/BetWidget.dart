@@ -19,14 +19,23 @@ class _BetWidgetState extends State<BetWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Calculate dynamic dimensions
+    final playerWidgetWidth = screenWidth * 0.3; // 30% of screen width
+    final buttonSize = playerWidgetWidth * 0.4; // 40% of widget width
+
+    final buttonHeight = buttonSize; // 40% of widget width
+
     return GestureDetector(
       onTap: () {
         // Cambia il valore della scommessa quando l'utente tocca il widget
         _changeBetValue();  // Esempio di cambio valore (puoi modificarlo come preferisci)
       },
       child: Container(
-        width: 109,
-        height: 86,
+        width: buttonSize,
+        height: buttonHeight,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
@@ -45,7 +54,7 @@ class _BetWidgetState extends State<BetWidget> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 32,
+                fontSize: 10,
                 fontFamily: 'Lato',
                 fontWeight: FontWeight.w700,
                 height: 1,

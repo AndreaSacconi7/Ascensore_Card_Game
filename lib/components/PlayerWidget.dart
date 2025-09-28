@@ -14,8 +14,16 @@ class PlayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get screen width and height
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Calculate dynamic dimensions
+    final widgetWidth = screenWidth * 0.3; // 30% of screen width
+    final avatarSize = widgetWidth * 0.4; // 40% of widget width
+
     return SizedBox(
-      width: 200, // Adjust width as needed
+      width: widgetWidth,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -27,15 +35,15 @@ class PlayerWidget extends StatelessWidget {
               color: Colors.black,
               fontSize: 26,
               fontFamily: 'Late',
-              fontWeight: FontWeight.w300,
+              fontWeight: FontWeight.w100,
               height: 1,
             ),
           ),
           const SizedBox(height: 8),
           // Player Avatar
           Container(
-            width: 92,
-            height: 95,
+            width: avatarSize,
+            height: avatarSize,
             decoration: BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('assets/cards/yoga.png'),
