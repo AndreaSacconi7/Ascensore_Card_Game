@@ -3,15 +3,27 @@ import 'dart:collection';
 
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/message/Message.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 
 class ClientManager {
   final Queue<Message> _messageQueue = Queue<Message>();
   final _condition = Condition();
   bool _isRunning = false;
+  late final Stream _stream;
 
-  ClientManager() {
+  ClientManager(WebSocketChannel channel) {
+    _stream = channel.stream.asBroadcastStream();
+    _stream.listen(_handleMessage);
     _startProcessing();
+  }
+
+  void _handleMessage(dynamic message) {
+    // Gestisci i messaggi in arrivo dal server WebSocket
+    print('Message from server: $message');
+
+    enqueueMessage(message);
+    // Puoi aggiornare lo stato del widget in base ai messaggi ricevuti
   }
 
   // Add a message to the queue

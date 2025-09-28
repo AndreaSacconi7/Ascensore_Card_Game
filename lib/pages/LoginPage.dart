@@ -1,39 +1,49 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:test_socket/ClientManager.dart';
+import 'package:test_socket/message/ExecutableInClient.dart';
+import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
 import 'package:test_socket/widgets/PlayerWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import '../message/Message.dart';
 import 'HomePage.dart';
 import '../message/LoginResponse.dart';
 
 class LoginPage extends StatefulWidget {
-  final WebSocketChannel channel;
 
-  LoginPage({required this.channel});
+  ClientManager clientManager;
+
+  LoginPage({required this.clientManager});
 
   @override
-  _LoginPageState createState() => _LoginPageState();
+  _LoginPageState createState() => _LoginPageState(clientManager: clientManager);
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends State<LoginPage> implements PageInterface{
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  late final Stream _stream;
+
+  @override
+  late ClientManager clientManager;
+
+  _LoginPageState({required ClientManager clientManager}){
+    this.clientManager = clientManager;
+  }
 
   @override
   void initState() {
     super.initState();
-    _stream = widget.channel.stream.asBroadcastStream();
-    _stream.listen(_handleMessage);
   }
 
-  void _handleMessage(dynamic message) {
-    final loginMap = jsonDecode(message) as Map<String, dynamic>;
+  @override
+  void handleLoginResponse(LoginResponse response) {
+    /*final loginMap = jsonDecode(message) as Map<String, dynamic>;
     //final user = User.fromJson(userMap);
     //final json = jsonDecode(message);
-    final response = LoginResponse.fromJson(loginMap);
+    final response = LoginResponse.fromJson(loginMap);*/
 
     //debug
     print('Response of the server: ${response.isLogged}, ${response.nickname}');
@@ -44,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => HomePage(channel: widget.channel),
+          builder: (_) => HomePage(clientManager: this),
         ),
       );
     } else {
@@ -82,7 +92,9 @@ class _LoginPageState extends State<LoginPage> {
     final jsonCommand = jsonEncode(command);
 
     // Invia la stringa JSON al server
-    widget.channel.sink.add(jsonCommand);
+    //widget.channel.sink.add(jsonCommand);
+
+
     /*Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -115,4 +127,5 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
+
 }

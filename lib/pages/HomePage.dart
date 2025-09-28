@@ -6,9 +6,10 @@ import '../widgets/CardWidget.dart';
 import '../widgets/PlayerWidget.dart';
 
 class HomePage extends StatefulWidget {
-  final WebSocketChannel channel;
 
-  HomePage({required this.channel});
+  ClientManager clientManager;
+
+  HomePage({super.key, required this.clientManager});
 
   @override
   _HomePageState createState() => _HomePageState();

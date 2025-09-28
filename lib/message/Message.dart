@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:test_socket/message/ExecutableInClient.dart';
+import 'package:test_socket/pages/PageInterface.dart';
 
 class Message {
   final ExecutableInClient executable;
@@ -27,7 +28,7 @@ class Message {
     };
   }
 
-  void execute() {
-    executable.execute();
+  void execute(PageInterface page) {
+    executable.execute(page: page);
   }
 }

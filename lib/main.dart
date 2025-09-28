@@ -9,13 +9,16 @@ void main() {
 
 class MyApp extends StatelessWidget {
   final channel = WebSocketChannel.connect(Uri.parse('ws://10.0.2.2:8080/ws'));
+  late final ClientManager clientManager;
 
-  final clientManager = ClientManager();
+  MyApp() {
+    clientManager = ClientManager(channel); // Inizializza ClientManager
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: LoginPage(channel: channel),
+      home: LoginPage(clientManager: clientManager),
     );
   }
 }
