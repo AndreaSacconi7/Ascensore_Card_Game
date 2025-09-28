@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test_socket/components/TakenWidget.dart';
+import 'package:test_socket/widgets/TakenWidget.dart';
 import 'BetWidget.dart';
 
 class PlayerWidget extends StatelessWidget {

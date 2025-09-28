@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:test_socket/components/BetWidget.dart';
-import 'package:test_socket/components/PlayerWidget.dart';
-import 'package:test_socket/components/TakenWidget.dart';
+import 'package:test_socket/widgets/BetWidget.dart';
+import 'package:test_socket/widgets/PlayerWidget.dart';
+import 'package:test_socket/widgets/TakenWidget.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'HomePage.dart';
 import '../message/LoginResponse.dart';
