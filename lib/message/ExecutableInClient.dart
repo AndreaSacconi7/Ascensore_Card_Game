@@ -5,4 +5,6 @@ abstract class ExecutableInClient {
   void execute({required PageInterface page});
 
   Map<String, dynamic> toJson();
+
+  ExecutableInClient.fromJson(Map<String, dynamic> json);
 }

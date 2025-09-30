@@ -8,6 +8,9 @@ import 'package:test_socket/widgets/BetWidget.dart';
 import 'package:test_socket/widgets/PlayerWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import '../command/Command.dart';
+import '../command/CommandType.dart';
+import '../command/LoginRequest.dart';
 import '../message/Message.dart';
 import 'HomePage.dart';
 import '../message/LoginResponse.dart';
@@ -19,7 +22,7 @@ class LoginPage extends StatefulWidget {
   LoginPage({required this.clientManager});
 
   @override
-  _LoginPageState createState() => _LoginPageState(clientManager: clientManager);
+  _LoginPageState createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> implements PageInterface{
@@ -27,15 +30,9 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
   final _passwordController = TextEditingController();
 
   @override
-  late ClientManager clientManager;
-
-  _LoginPageState({required ClientManager clientManager}){
-    this.clientManager = clientManager;
-  }
-
-  @override
   void initState() {
     super.initState();
+    widget.clientManager.setCurrentPage(this);
   }
 
   @override
@@ -54,7 +51,7 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => HomePage(clientManager: this),
+          builder: (_) => HomePage(clientManager: widget.clientManager),
         ),
       );
     } else {
@@ -81,15 +78,26 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
   void _sendLogin() {
     final username = _usernameController.text;
     final password = _passwordController.text;
-    final command = {
-      "type": "LOGIN_COMMAND",
+    /*final command = {
+      "commandType": "LOGIN_COMMAND",
       "executable": {
         "nickname": username,
         "password": password
       }
-    };
+    };*/
     // Converti l'oggetto Dart in una stringa JSON
-    final jsonCommand = jsonEncode(command);
+    //final jsonCommand = jsonEncode(command);
+
+    LoginRequest loginRequest = LoginRequest(username: username, password: password);
+
+    Command command = Command(
+      commandType: CommandType.LOGIN_COMMAND,
+      executable: loginRequest,
+      nickName: username,
+    );
+    final jsonCommand = command.toJson();
+
+    widget.clientManager.sendCommand(jsonCommand);
 
     // Invia la stringa JSON al server
     //widget.channel.sink.add(jsonCommand);

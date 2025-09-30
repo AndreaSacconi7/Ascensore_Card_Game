@@ -1,23 +1,25 @@
+import 'dart:convert';
+
 import 'package:test_socket/command/CommandType.dart';
 import 'package:test_socket/command/ExecutableInServer.dart';
 
 class Command {
-  final CommandType type;
+  final CommandType commandType;
   ExecutableInServer? executable;
-  String? clientSessionId;
+  String? nickName;
 
   Command({
-    required this.type,
+    required this.commandType,
     this.executable,
-    this.clientSessionId,
+    this.nickName,
   });
 
   // Metodo per serializzare in JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type.toString().split('.').last,
+  String toJson() {
+    return jsonEncode({
+      'commandType': commandType.toString().split('.').last,
       'executable': executable?.toJson(),
-      'clientSessionId': clientSessionId,
-    };
+      'clientSessionId': nickName,
+    });
   }
 }

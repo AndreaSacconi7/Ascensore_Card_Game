@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/command/Command.dart';
+import 'package:test_socket/message/LoginResponse.dart';
+import 'package:test_socket/pages/PageInterface.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../widgets/CardWidget.dart';
@@ -15,9 +18,7 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-
-  late final Stream _stream;
+class _HomePageState extends State<HomePage> implements PageInterface {
 
   //dopo vanno popolate con i dati veri
   List<String> handCards = List.generate(10, (index) => 'Carta ${index + 1}');
@@ -29,8 +30,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _stream = widget.channel.stream.asBroadcastStream();
-    _stream.listen(_handleMessage);
+    widget.clientManager.setCurrentPage(this);
   }
 
   void _handleMessage(dynamic message) {
@@ -40,7 +40,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _sendCommand(Command command) {
-    widget.channel.sink.add(command);
+    widget.clientManager.sendCommand(command);
   }
 
   @override
@@ -154,5 +154,11 @@ class _HomePageState extends State<HomePage> {
           ),
       ),
     );
+  }
+
+  @override
+  handleLoginResponse(LoginResponse response) {
+    // TODO: implement handleLoginResponse
+
   }
 }
