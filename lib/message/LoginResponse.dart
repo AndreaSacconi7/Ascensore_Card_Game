@@ -1,25 +1,24 @@
 import 'dart:convert';
 
-import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
 class LoginResponse implements ExecutableInClient {
   final bool isLogged;
   final String nickname;
-  //List<String> connectedPlayers;
+  List<String> connectedPlayers;
 
   LoginResponse(
     this.isLogged,
     this.nickname,
-    //this.connectedPlayers
+    this.connectedPlayers
   );
 
 
   LoginResponse.fromJson(Map<String, dynamic> json) :
-        //connectedPlayers = json['executable']['connectedPlayers'] as List<String>,
         isLogged = json['executable']['isLogged'] as bool,
-        nickname = json['executable']['nickname'] as String;
+        nickname = json['executable']['nickname'] as String,
+        connectedPlayers = List<String>.from(json['executable']['connectedPlayers'] as List);
 
 
   @override
@@ -33,7 +32,7 @@ class LoginResponse implements ExecutableInClient {
     return {
       'isLogged': isLogged,
       'nickname': nickname,
-      //'connectedPlayers': connectedPlayers,
+      'connectedPlayers': connectedPlayers,
     };
   }
 

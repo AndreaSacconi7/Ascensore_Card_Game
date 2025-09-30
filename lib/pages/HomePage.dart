@@ -3,6 +3,8 @@ import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/command/Command.dart';
 import 'package:test_socket/message/LoginResponse.dart';
 import 'package:test_socket/pages/PageInterface.dart';
+import 'package:test_socket/widgets/BetWidget.dart';
+import 'package:test_socket/widgets/TakenWidget.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../widgets/CardWidget.dart';
@@ -51,50 +53,6 @@ class _HomePageState extends State<HomePage> implements PageInterface {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // Questa parte ora espande correttamente il GridView
-            /*Expanded(
-              child: GridView.count(
-                crossAxisCount: 3,
-                padding: EdgeInsets.all(8),
-                children: [
-                  StreamBuilder(
-                    stream: channel.stream,
-                    builder: (context, snapshot) {
-                      return Center(
-                        child: Text(
-                          snapshot.hasData ? '${snapshot.data}' : 'No data',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      );
-                    },
-                  ),
-                  const PlayerWidget(name: "Playerr", avatarUrl: "ciao.png"),
-                  Container(
-                    padding: const EdgeInsets.all(8.0),
-                    child: TextField(
-                      onSubmitted: (text) => channel.sink.add(text),
-                      decoration: InputDecoration(
-                        labelText: 'Send message',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const PlayerWidget(name: "PlayerDue", avatarUrl: "ciao.png"),
-                  Container(color: Colors.grey.shade300), // per riempire lo spazio
-                  Container(color: Colors.grey.shade300), // per riempire lo spazio
-                  Container(color: Colors.grey.shade300), // per riempire lo spazio
-                  Container(color: Colors.grey.shade300), // per riempire lo spazio
-
-                  const PlayerWidget(
-                    name: 'Player 1',
-                    avatarUrl: 'https://example.com/avatar1.png',
-                  ),
-                ],
-              ),
-            ),
-
-
-*/
 
             Row(
               children: [
@@ -132,11 +90,16 @@ class _HomePageState extends State<HomePage> implements PageInterface {
               ],
             ),
 
-
-            // Carte in basso – visibile perché fuori dal GridView
+            const Row(
+              children: [
+                BetWidget(),
+                TakenWidget(),
+              ],
+            ),
           ],
         ),
       ),
+      // Carte in basso
       bottomNavigationBar: Container(
           height: 160,
           color: Colors.black12,
