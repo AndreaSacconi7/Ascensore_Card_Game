@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
+import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/model/MySelfPlayer.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
@@ -30,6 +31,9 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  String nickname = '';
+  String pwd = '';
+
   @override
   void initState() {
     super.initState();
@@ -43,45 +47,40 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
     //final json = jsonDecode(message);
     final response = LoginResponse.fromJson(loginMap);*/
 
-    //debug
-    print('Response of the server: ${response.isLogged}, ${response.nickname}');
+    if(response.nickname == nickname){
+      //debug
+      print('Response of the server: ${response.isLogged}, ${response.nickname}');
 
-    if (response.isLogged) {
-      print('Welcome, ${response.nickname}');
+      if (response.isLogged) {
+        print('Welcome, ${response.nickname}');
 
-      widget.clientManager.setNickname(response.nickname);
+        //creo il player del client
+        MySelfPlayer mySelfPlayer = MySelfPlayer(response.nickname);
+        widget.clientManager.setMySelfPlayer(mySelfPlayer);
 
-      //print('Connected players: ${response.connectedPlayers}');
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(clientManager: widget.clientManager),
-        ),
-      );
-    } else {
-      print('Login failed');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login fallito")),
-      );
+        //print('Connected players: ${response.connectedPlayers}');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => HomePage(clientManager: widget.clientManager),
+          ),
+        );
+      } else {
+        print('Login failed');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Login fallito")),
+        );
+      }
     }
-    /*
-    if (message == 'LOGIN_OK') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(channel: widget.channel),
-        ),
-      );
-    } else if (message == 'LOGIN_FAIL') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login fallito")),
-      );
-    }*/
   }
 
   void _sendLogin() {
     final username = _usernameController.text;
     final password = _passwordController.text;
+
+    nickname = username;
+    pwd = password;
+
     /*final command = {
       "commandType": "LOGIN_COMMAND",
       "executable": {
@@ -138,6 +137,11 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
         ),
       ),
     );
+  }
+
+  @override
+  handleHandUpdate(HandUpdate handUpdate) {
+
   }
 
 }

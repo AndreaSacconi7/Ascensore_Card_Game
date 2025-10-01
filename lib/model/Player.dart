@@ -1,5 +1,5 @@
 
-import 'package:test_socket/model/Card.dart';
+import 'package:test_socket/model/CardGame.dart';
 
 class Player {
 
@@ -8,7 +8,7 @@ class Player {
   int bet = 0;
   int roundsWon = 0;
   //PlayerState state = PlayerState.WAITING;
-  Card? playedCard;
+  CardGame? playedCard;
 
   Player(this.nickname);
 
@@ -40,11 +40,11 @@ class Player {
     return roundsWon;
   }
 
-  void setPlayedCard(Card card) {
+  void setPlayedCard(CardGame card) {
     playedCard = card;
   }
 
-  Card? getPlayedCard() {
+  CardGame? getPlayedCard() {
     return playedCard;
   }
 }

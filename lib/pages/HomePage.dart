@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/command/Command.dart';
+import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/LoginResponse.dart';
 import 'package:test_socket/model/Game.dart';
+import 'package:test_socket/model/Player.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
@@ -24,9 +26,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> implements PageInterface {
 
   //dopo vanno cancellate perchè si usano quelle in game
-  List<String> handCards = List.generate(10, (index) => 'Carta ${index + 1}');
+  /*List<String> handCards = List.generate(10, (index) => 'Carta ${index + 1}');
   String briscola = 'Asso di Denari';
-  List<String> playedCards = List.generate(4, (index) => 'Carta ${index + 1}');
+  List<String> playedCards = List.generate(4, (index) => 'Carta ${index + 1}');*/
 
   Game game = Game();
 
@@ -47,6 +49,20 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   }
 
   @override
+  handleLoginResponse(LoginResponse response) {
+
+    if(response.isLogged) {
+      print('New user logged in, ${response.nickname}');
+      setState(() {
+        Player newPlayer = Player(response.nickname);
+        game.players.add(newPlayer);
+      });
+    } else {
+      print('Login failed for new client ${response.nickname}');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('WebSocket Demo')),
@@ -55,11 +71,26 @@ class _HomePageState extends State<HomePage> implements PageInterface {
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
 
+
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: game.players.isNotEmpty ? game.players.map((player) {
+                return PlayerWidget(
+                  name: player.getNickname(),
+                  avatarUrl: "default_avatar_url",
+                );
+              }).toList()
+              : [Text('No players available yet')],
+            ),
+
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                PlayerWidget(name: "Andrea", avatarUrl: "aa"),
-                PlayerWidget(name: "Luca", avatarUrl: "aa"),
-                PlayerWidget(name: "Paolo", avatarUrl: "aa")
+                game.players.isNotEmpty && game.players[0].playedCard != null
+                    ? CardWidget(card: game.players[0].playedCard!) // carta in alto al centro
+                    : SizedBox.shrink(), // Widget di default nascosto
               ],
             ),
 
@@ -68,26 +99,25 @@ class _HomePageState extends State<HomePage> implements PageInterface {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CardWidget(cardName: playedCards[0]),     //carta in alto al centro
+                game.players.isNotEmpty && game.players[1].playedCard != null
+                    ? CardWidget(card: game.players[1].playedCard!)   //carta a sx
+                    : SizedBox.shrink(),
+                game.players.isNotEmpty && game.briscola != null
+                    ? CardWidget(card: game.briscola!)   //briscola al centro
+                    : SizedBox.shrink(),
+                game.players.isNotEmpty && game.players[2].playedCard != null
+                    ? CardWidget(card: game.players[2].playedCard!)     //  carta a dx
+                    : SizedBox.shrink(),
               ],
             ),
-
 
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CardWidget(cardName: playedCards[1]),       //carta a sx
-                CardWidget(cardName: briscola),           //briscola al centro
-                CardWidget(cardName: playedCards[2]),     //carta a dx
-              ],
-            ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CardWidget(cardName: playedCards[3]),       //carta in basso al centro
+                game.players.isNotEmpty && game.players[3].playedCard != null
+                    ? CardWidget(card: game.players[3].playedCard!)     //carta in basso al centro
+                    : SizedBox.shrink(),
               ],
             ),
 
@@ -108,12 +138,13 @@ class _HomePageState extends State<HomePage> implements PageInterface {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: handCards.map((card) {
+              children: widget.clientManager.mySelfPlayer!.handCards.isNotEmpty ? widget.clientManager.mySelfPlayer!.handCards.map((card) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: CardWidget(cardName: card),
+                  child: CardWidget(card: card),
                 );
-              }).toList(),
+              }).toList()
+              : [Text('No cards in hand')],
             ),
           ),
       ),
@@ -121,8 +152,11 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   }
 
   @override
-  handleLoginResponse(LoginResponse response) {
-    // TODO: implement handleLoginResponse
+  handleHandUpdate(HandUpdate handUpdate) {
 
+    setState(() {
+      widget.clientManager.mySelfPlayer?.setHandCards(handUpdate.handCards);
+    });
   }
+
 }

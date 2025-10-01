@@ -1,11 +1,11 @@
 import 'package:test_socket/model/Seed.dart';
 
-class Card {
+class CardGame {
 
   final Seed seed;
   final int value;
 
-  Card(this.seed, this.value);
+  CardGame(this.seed, this.value);
 
   Seed getSeed() {
     return seed;

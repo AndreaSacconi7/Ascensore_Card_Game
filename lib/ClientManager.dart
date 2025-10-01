@@ -2,10 +2,14 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/message/LoginResponse.dart';
 import 'package:test_socket/message/Message.dart';
+import 'package:test_socket/model/MySelfPlayer.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+
+import 'message/HandUpdate.dart';
 
 
 
@@ -16,7 +20,7 @@ class ClientManager {
   late final WebSocketChannel channel;
   late final Stream _stream;
   PageInterface? currentPage;
-  String? nickname;
+  MySelfPlayer? mySelfPlayer;
 
   ClientManager(WebSocketChannel channel) {
     this.channel = channel;
@@ -33,12 +37,12 @@ class ClientManager {
     return currentPage;
   }
 
-  void setNickname(String nickName) {
-    this.nickname = nickName;
+  void setMySelfPlayer(MySelfPlayer player) {
+    mySelfPlayer = player;
   }
 
-  String? getNickname() {
-    return nickname;
+  MySelfPlayer? getMySelfPlayer() {
+    return mySelfPlayer;
   }
 
   void sendCommand(dynamic jsonCommand){
@@ -57,8 +61,13 @@ class ClientManager {
 
     final String stringMessageType = jsonMap['messageType'];
 
-    if(stringMessageType == 'LOGIN_RESPONSE'){
-      final executable = LoginResponse.fromJson(jsonMap);
+    final ExecutableInClient executable;
+
+    if(stringMessageType == 'LOGIN_RESPONSE') {
+      executable = LoginResponse.fromJson(jsonMap);
+      message = Message.fromJson(jsonMap, executable);
+    }else if(stringMessageType == 'HAND_UPDATE') {
+      executable = HandUpdate.fromJson(jsonMap);
       message = Message.fromJson(jsonMap, executable);
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');

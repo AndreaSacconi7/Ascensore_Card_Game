@@ -1,11 +1,11 @@
-import 'package:test_socket/model/Card.dart';
+import 'package:test_socket/model/CardGame.dart';
 import 'package:test_socket/model/Player.dart';
 
 class Game {
 
   List<Player> players = [];
 
-  Card? briscola;
+  CardGame? briscola;
 
   int set = 0;
   int round = 0;
@@ -25,17 +25,16 @@ class Game {
       if(pl.getNickname() == player.getNickname()) {
         print('Rimuovo il giocatore ${pl.getNickname()}');
         players.remove(pl);
-        //TODO: modificare playerWidget
         break;
       }
     }
   }
 
-  void setBriscola(Card card) {
+  void setBriscola(CardGame card) {
     briscola = card;
   }
 
-  Card? getBriscola() {
+  CardGame? getBriscola() {
     return briscola;
   }
 

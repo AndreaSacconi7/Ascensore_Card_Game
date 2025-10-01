@@ -1,22 +1,22 @@
-import 'package:test_socket/model/Card.dart';
+import 'package:test_socket/model/CardGame.dart';
 
 import 'Player.dart';
 
 class MySelfPlayer extends Player{
 
-  List<Card> handCards = [];
+  List<CardGame> handCards = [];
 
   MySelfPlayer(super.nickname);
 
-  void setHandCards(List<Card> newHandCards) {
+  void setHandCards(List<CardGame> newHandCards) {
     handCards = newHandCards;
   }
 
-  List<Card> getHandCards() {
+  List<CardGame> getHandCards() {
     return handCards;
   }
 
-  void removeCardFromHand(Card card) {
+  void removeCardFromHand(CardGame card) {
     //TODO: da implementare
   }
 }
