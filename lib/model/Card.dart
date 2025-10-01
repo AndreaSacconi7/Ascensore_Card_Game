@@ -16,4 +16,8 @@ class Card {
   }
 
   //otterrò il path all'immagine della carta tramite seed e value (es: "assets/cards/SWORDS_4.png")
+  String getImagePath() {
+    return 'assets/cards/${seed.toString().split('.').last}_$value.png';
+  }
+
 }
