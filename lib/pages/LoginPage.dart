@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
+import 'package:test_socket/model/MySelfPlayer.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
 import 'package:test_socket/widgets/PlayerWidget.dart';
@@ -47,6 +48,9 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
 
     if (response.isLogged) {
       print('Welcome, ${response.nickname}');
+
+      widget.clientManager.setNickname(response.nickname);
+
       //print('Connected players: ${response.connectedPlayers}');
       Navigator.pushReplacement(
         context,

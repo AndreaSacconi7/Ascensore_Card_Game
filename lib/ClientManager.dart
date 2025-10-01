@@ -16,7 +16,7 @@ class ClientManager {
   late final WebSocketChannel channel;
   late final Stream _stream;
   PageInterface? currentPage;
-  String? nickName;
+  String? nickname;
 
   ClientManager(WebSocketChannel channel) {
     this.channel = channel;
@@ -34,11 +34,11 @@ class ClientManager {
   }
 
   void setNickname(String nickName) {
-    this.nickName = nickName;
+    this.nickname = nickName;
   }
 
   String? getNickname() {
-    return nickName;
+    return nickname;
   }
 
   void sendCommand(dynamic jsonCommand){

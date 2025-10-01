@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/command/Command.dart';
 import 'package:test_socket/message/LoginResponse.dart';
+import 'package:test_socket/model/Game.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
@@ -22,12 +23,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> implements PageInterface {
 
-  //dopo vanno popolate con i dati veri
+  //dopo vanno cancellate perchè si usano quelle in game
   List<String> handCards = List.generate(10, (index) => 'Carta ${index + 1}');
-
   String briscola = 'Asso di Denari';
-
   List<String> playedCards = List.generate(4, (index) => 'Carta ${index + 1}');
+
+  Game game = Game();
 
   @override
   void initState() {
