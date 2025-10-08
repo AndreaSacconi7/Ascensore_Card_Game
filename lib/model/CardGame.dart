@@ -7,6 +7,10 @@ class CardGame {
 
   CardGame(this.seed, this.value);
 
+  CardGame.fromJson(Map<String, dynamic> json) :
+        seed = Seed.values.firstWhere((e) => e.toString() == 'Seed.' + json['seed']),
+        value = json['value'] as int;
+
   Seed getSeed() {
     return seed;
   }

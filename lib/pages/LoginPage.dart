@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
+import 'package:test_socket/message/BriscolaUpdate.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/message/HandUpdate.dart';
+import 'package:test_socket/message/StartingGame.dart';
 import 'package:test_socket/model/MySelfPlayer.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
@@ -142,6 +144,19 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
   @override
   handleHandUpdate(HandUpdate handUpdate) {
 
+    print("HAND UPDATE in LoginPage, should not happen--------------------------------------------------------------------");
+  }
+
+  @override
+  handleBriscolaUpdate(BriscolaUpdate briscolaUpdate) {
+
+    print("BRISCOLA UPDATE in LoginPage, should not happen--------------------------------------------------------------------");
+  }
+
+  @override
+  handleStartingGame(StartingGame startingGame) {
+
+    print("STARTING GAME in LoginPage, should not happen--------------------------------------------------------------------");
   }
 
 }

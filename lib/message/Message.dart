@@ -26,13 +26,14 @@ class Message {
     );
   }
 
+  /*
   // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
       'executable': executable.toJson(),
       'nickName': nickName,
     };
-  }
+  }*/
 
   void execute(PageInterface page) {
     executable.execute(page: page);

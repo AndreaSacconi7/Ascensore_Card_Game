@@ -18,10 +18,6 @@ class HandUpdate implements ExecutableInClient {
     page.handleHandUpdate(this);
   }
 
-  @override
-  Map<String, dynamic> toJson() {
 
-    throw UnimplementedError();
-  }
 
 }

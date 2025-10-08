@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/command/Command.dart';
+import 'package:test_socket/message/BriscolaUpdate.dart';
 import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/LoginResponse.dart';
+import 'package:test_socket/message/StartingGame.dart';
 import 'package:test_socket/model/Game.dart';
 import 'package:test_socket/model/Player.dart';
 import 'package:test_socket/pages/PageInterface.dart';
@@ -70,83 +72,94 @@ class _HomePageState extends State<HomePage> implements PageInterface {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: game.players.isNotEmpty ? game.players.map((player) {
-                return PlayerWidget(
-                  name: player.getNickname(),
-                  avatarUrl: "default_avatar_url",
-                );
-              }).toList()
-              : [Text('No players available yet')],
-            ),
-
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                game.players.isNotEmpty && game.players[0].playedCard != null
-                    ? CardWidget(card: game.players[0].playedCard!) // carta in alto al centro
-                    : SizedBox.shrink(), // Widget di default nascosto
-              ],
-            ),
-
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                game.players.isNotEmpty && game.players[1].playedCard != null
-                    ? CardWidget(card: game.players[1].playedCard!)   //carta a sx
-                    : SizedBox.shrink(),
-                game.players.isNotEmpty && game.briscola != null
-                    ? CardWidget(card: game.briscola!)   //briscola al centro
-                    : SizedBox.shrink(),
-                game.players.isNotEmpty && game.players[2].playedCard != null
-                    ? CardWidget(card: game.players[2].playedCard!)     //  carta a dx
-                    : SizedBox.shrink(),
-              ],
-            ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                game.players.isNotEmpty && game.players[3].playedCard != null
-                    ? CardWidget(card: game.players[3].playedCard!)     //carta in basso al centro
-                    : SizedBox.shrink(),
-              ],
-            ),
-
-            const Row(
-              children: [
-                BetWidget(),
-                TakenWidget(),
-              ],
-            ),
+            // Riga in alto con i giocatori
+            _buildPlayersRow(),
+            // Riga con la carta giocata in alto
+            _buildTopCardRow(),
+            // Riga centrale con le carte giocate dai giocatori e la briscola
+            _buildMiddleRow(),
+            // Riga in basso con scommesse e prese
+            _buildBetAndTakenRow(),
           ],
         ),
       ),
       // Carte in basso
-      bottomNavigationBar: Container(
-          height: 160,
-          color: Colors.black12,
-          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: widget.clientManager.mySelfPlayer!.handCards.isNotEmpty ? widget.clientManager.mySelfPlayer!.handCards.map((card) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: CardWidget(card: card),
-                );
-              }).toList()
+      bottomNavigationBar: _buildHandCardsBar(),
+    );
+  }
+
+  Widget _buildPlayersRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: game.players.isNotEmpty
+          ? game.players.map((player) => PlayerWidget(
+        name: player.getNickname(),
+        avatarUrl: "default_avatar_url",
+      )).toList()
+          : [Text('No players available yet')],
+    );
+  }
+
+  Widget _buildTopCardRow() {
+    final topPlayer = game.players.isNotEmpty ? game.players[0] : null;
+    return topPlayer?.playedCard != null
+        ? Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [CardWidget(card: topPlayer!.playedCard!)],
+    )
+        : SizedBox.shrink();
+  }
+
+  Widget _buildMiddleRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildPlayerCard(1),
+        _buildBriscolaCard(),
+        _buildPlayerCard(2),
+      ],
+    );
+  }
+
+  Widget _buildPlayerCard(int playerIndex) {
+    final player = game.players.length > playerIndex ? game.players[playerIndex] : null;
+    return player?.playedCard != null
+        ? CardWidget(card: player!.playedCard!)
+        : SizedBox.shrink();
+  }
+
+  Widget _buildBriscolaCard() {
+    return game.briscola != null
+        ? CardWidget(card: game.briscola!)
+        : SizedBox.shrink();
+  }
+
+  Widget _buildBetAndTakenRow() {
+    return const Row(
+      children: [
+        BetWidget(),
+        TakenWidget(),
+      ],
+    );
+  }
+
+  Widget _buildHandCardsBar() {
+    return Container(
+      height: 160,
+      color: Colors.black12,
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: widget.clientManager.mySelfPlayer?.handCards.isNotEmpty == true
+              ? widget.clientManager.mySelfPlayer!.handCards
+              .map((card) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: CardWidget(card: card),
+          ))
+              .toList()
               : [Text('No cards in hand')],
-            ),
-          ),
+        ),
       ),
     );
   }
@@ -156,6 +169,33 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
     setState(() {
       widget.clientManager.mySelfPlayer?.setHandCards(handUpdate.handCards);
+    });
+  }
+
+  @override
+  handleBriscolaUpdate(BriscolaUpdate briscolaUpdate) {
+
+    setState(() {
+      game.setBriscola(briscolaUpdate.briscolaCard);
+    });
+  }
+
+  @override
+  handleStartingGame(StartingGame startingGame) {
+
+    setState(() {
+      for(var playerNick in startingGame.connectedPlayers){
+        var finded = false;
+        for(var p in game.players){
+          if(p.getNickname() == playerNick || playerNick == widget.clientManager.mySelfPlayer?.getNickname()){
+            finded = true;
+            break;
+          }
+        }
+        if(!finded){
+          game.addPlayer(Player(playerNick));
+        }
+      }
     });
   }
 

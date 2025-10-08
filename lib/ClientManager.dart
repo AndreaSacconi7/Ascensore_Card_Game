@@ -9,7 +9,9 @@ import 'package:test_socket/model/MySelfPlayer.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import 'message/BriscolaUpdate.dart';
 import 'message/HandUpdate.dart';
+import 'message/StartingGame.dart';
 
 
 
@@ -68,6 +70,12 @@ class ClientManager {
       message = Message.fromJson(jsonMap, executable);
     }else if(stringMessageType == 'HAND_UPDATE') {
       executable = HandUpdate.fromJson(jsonMap);
+      message = Message.fromJson(jsonMap, executable);
+    }else if(stringMessageType == 'BRISCOLA_UPDATE') {
+      executable = BriscolaUpdate.fromJson(jsonMap);
+      message = Message.fromJson(jsonMap, executable);
+    }else if(stringMessageType == 'STARTING_GAME'){
+      executable = StartingGame.fromJson(jsonMap);
       message = Message.fromJson(jsonMap, executable);
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');

@@ -4,7 +4,7 @@ abstract class ExecutableInClient {
   // Define the interface for ExecutableInClient
   void execute({required PageInterface page});
 
-  Map<String, dynamic> toJson();
+  //Map<String, dynamic> toJson();
 
   ExecutableInClient.fromJson(Map<String, dynamic> json);
 }

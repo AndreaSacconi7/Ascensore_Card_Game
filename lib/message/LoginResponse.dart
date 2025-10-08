@@ -26,14 +26,6 @@ class LoginResponse implements ExecutableInClient {
       page.handleLoginResponse(this);
   }
 
-  @override
-  // Convert to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'isLogged': isLogged,
-      'nickname': nickname,
-      'connectedPlayers': connectedPlayers,
-    };
-  }
+
 
 }
