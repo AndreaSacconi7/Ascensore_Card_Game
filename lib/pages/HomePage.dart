@@ -4,7 +4,9 @@ import 'package:test_socket/command/Command.dart';
 import 'package:test_socket/message/BriscolaUpdate.dart';
 import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/LoginResponse.dart';
+import 'package:test_socket/message/PlayerStateUpdate.dart';
 import 'package:test_socket/message/StartingGame.dart';
+import 'package:test_socket/message/TextMessage.dart';
 import 'package:test_socket/model/Game.dart';
 import 'package:test_socket/model/Player.dart';
 import 'package:test_socket/pages/PageInterface.dart';
@@ -197,6 +199,20 @@ class _HomePageState extends State<HomePage> implements PageInterface {
         }
       }
     });
+  }
+
+  @override
+  handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {
+
+
+  }
+
+  @override
+  handleTextMessage(TextMessage textMessage) {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(textMessage.text)),
+    );
   }
 
 }

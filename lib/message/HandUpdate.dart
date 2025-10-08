@@ -10,8 +10,9 @@ class HandUpdate implements ExecutableInClient {
   HandUpdate(this.handCards);
 
   HandUpdate.fromJson(Map<String, dynamic> json) :
-        handCards = List<CardGame>.from(json['executable']['cards'] as List);
-
+        handCards = (json['executable']['cards'] as List)
+            .map((cardJson) => CardGame.fromJson(cardJson as Map<String, dynamic>))
+            .toList();
 
   @override
   void execute({required PageInterface page}) {

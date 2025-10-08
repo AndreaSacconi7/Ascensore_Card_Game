@@ -1,4 +1,4 @@
-enum Playerstate {
+enum PlayerState {
 
   IDLE,
   WAIT,

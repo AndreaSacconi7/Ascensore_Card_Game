@@ -5,12 +5,14 @@ import 'dart:convert';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/message/LoginResponse.dart';
 import 'package:test_socket/message/Message.dart';
+import 'package:test_socket/message/TextMessage.dart';
 import 'package:test_socket/model/MySelfPlayer.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'message/BriscolaUpdate.dart';
 import 'message/HandUpdate.dart';
+import 'message/PlayerStateUpdate.dart';
 import 'message/StartingGame.dart';
 
 
@@ -74,9 +76,20 @@ class ClientManager {
     }else if(stringMessageType == 'BRISCOLA_UPDATE') {
       executable = BriscolaUpdate.fromJson(jsonMap);
       message = Message.fromJson(jsonMap, executable);
-    }else if(stringMessageType == 'STARTING_GAME'){
+    }else if(stringMessageType == 'STARTING_GAME') {
       executable = StartingGame.fromJson(jsonMap);
       message = Message.fromJson(jsonMap, executable);
+    }else if(stringMessageType == 'PLAYER_STATE_UPDATE') {
+      if(jsonMap['nickname'] == mySelfPlayer?.nickname) {
+        print("Aggiornamento stato del giocatore stesso");
+        executable = PlayerStateUpdate.fromJson(jsonMap);
+        message = Message.fromJson(jsonMap, executable);
+      }else{
+        print("Aggiornamento stato di un altro giocatore");
+        final String text = jsonMap['nickname'] + " ha cambiato stato in " + jsonMap['executable']['playerState'];
+        executable = TextMessage(text);
+        message = Message.fromJson(jsonMap, executable);
+      }
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');
       return;

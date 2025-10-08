@@ -8,6 +8,7 @@ import 'MessageType.dart';
 class Message {
   final ExecutableInClient executable;
   final String nickName;
+  //si riconosce il tipo di messaggio nel clientManager con gli if in cascata
   final MessageType messageType;
 
   Message({
@@ -21,7 +22,7 @@ class Message {
     return Message(
       //executable già pronto
       executable: executable,
-      nickName: json['nickName'],
+      nickName: json['nickname'],
       messageType: MessageType.values.firstWhere((e) => e.toString().split('.').last == json['messageType'], orElse: () => throw ArgumentError('Invalid messageType: ${json['messageType']}'),)
     );
   }

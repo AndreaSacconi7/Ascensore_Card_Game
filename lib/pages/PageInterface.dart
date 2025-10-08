@@ -2,7 +2,9 @@ import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/message/BriscolaUpdate.dart';
 import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/Message.dart';
+import 'package:test_socket/message/PlayerStateUpdate.dart';
 import 'package:test_socket/message/StartingGame.dart';
+import 'package:test_socket/message/TextMessage.dart';
 
 import '../message/LoginResponse.dart';
 
@@ -17,4 +19,8 @@ abstract class PageInterface {
   handleBriscolaUpdate(BriscolaUpdate briscolaUpdate);
 
   handleStartingGame(StartingGame startingGame) {}
+
+  handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {}
+
+  handleTextMessage(TextMessage textMessage) {}
 }
