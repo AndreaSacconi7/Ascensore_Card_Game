@@ -7,8 +7,8 @@ class Game {
 
   CardGame? briscola;
 
-  int set = 0;
-  int round = 0;
+  int set = 1;
+  int round = 1;
   int turn = 0;
 
 

@@ -6,10 +6,13 @@ class PlayerStateUpdate implements ExecutableInClient {
 
   final PlayerState playerState;
 
-  PlayerStateUpdate(this.playerState);
+  final String nickname;
+
+  PlayerStateUpdate(this.playerState, this.nickname);
 
   PlayerStateUpdate.fromJson(Map<String, dynamic> json) :
-        playerState = json['executable']['playerState'] as PlayerState;
+        playerState = PlayerState.values.firstWhere((e) => e.toString() == 'PlayerState.' + json['executable']['playerState']),
+        nickname = json['executable']['nickname'] as String;
 
   @override
   void execute({required PageInterface page}) {

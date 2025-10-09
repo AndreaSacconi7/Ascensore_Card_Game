@@ -22,7 +22,7 @@ class CardWidget extends StatelessWidget {
       decoration: BoxDecoration(
         image: DecorationImage(
           image: AssetImage(card.getImagePath()),
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
         ),
         borderRadius: BorderRadius.circular(8),
       ),

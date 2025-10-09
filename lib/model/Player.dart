@@ -1,5 +1,6 @@
 
 import 'package:test_socket/model/CardGame.dart';
+import 'package:test_socket/model/PlayerState.dart';
 
 class Player {
 
@@ -9,6 +10,7 @@ class Player {
   int roundsWon = 0;
   //PlayerState state = PlayerState.WAITING;
   CardGame? playedCard;
+  PlayerState playerState = PlayerState.IDLE;
 
   Player(this.nickname);
 
@@ -46,5 +48,13 @@ class Player {
 
   CardGame? getPlayedCard() {
     return playedCard;
+  }
+
+  void setPlayerState(PlayerState newState) {
+    playerState = newState;
+  }
+
+  PlayerState getPlayerState() {
+    return playerState;
   }
 }

@@ -75,6 +75,10 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
           SnackBar(content: Text("Login fallito")),
         );
       }
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("result of ${response.nickname} login: ${response.isLogged}")),
+      );
     }
   }
 

@@ -80,16 +80,8 @@ class ClientManager {
       executable = StartingGame.fromJson(jsonMap);
       message = Message.fromJson(jsonMap, executable);
     }else if(stringMessageType == 'PLAYER_STATE_UPDATE') {
-      if(jsonMap['nickname'] == mySelfPlayer?.nickname) {
-        print("Aggiornamento stato del giocatore stesso");
-        executable = PlayerStateUpdate.fromJson(jsonMap);
-        message = Message.fromJson(jsonMap, executable);
-      }else{
-        print("Aggiornamento stato di un altro giocatore");
-        final String text = jsonMap['nickname'] + " ha cambiato stato in " + jsonMap['executable']['playerState'];
-        executable = TextMessage(text);
-        message = Message.fromJson(jsonMap, executable);
-      }
+      executable = PlayerStateUpdate.fromJson(jsonMap);
+      message = Message.fromJson(jsonMap, executable);
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');
       return;
