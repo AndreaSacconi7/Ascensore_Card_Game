@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/message/BriscolaUpdate.dart';
+import 'package:test_socket/message/EndRoundUpdate.dart';
+import 'package:test_socket/message/EndSetUpdate.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/PlayerStateUpdate.dart';
@@ -177,6 +179,18 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(textMessage.text)),
     );
+  }
+
+  @override
+  handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {
+
+    print("END ROUND UPDATE in LoginPage, should not happen--------------------------------------------------------------------");
+  }
+
+  @override
+  handleEndSetUpdate(EndSetUpdate endSetUpdate) {
+
+    print("END SET UPDATE in LoginPage, should not happen--------------------------------------------------------------------");
   }
 
 }

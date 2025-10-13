@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/command/Command.dart';
 import 'package:test_socket/message/BriscolaUpdate.dart';
+import 'package:test_socket/message/EndRoundUpdate.dart';
+import 'package:test_socket/message/EndSetUpdate.dart';
 import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/LoginResponse.dart';
 import 'package:test_socket/message/PlayerStateUpdate.dart';
@@ -410,6 +412,34 @@ class _HomePageState extends State<HomePage> implements PageInterface {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  @override
+  handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {
+
+    for(Player p in game.players){
+      for(String nickname in endRoundUpdate.nextPlayerOrderAndTaken.keys){
+        if(p.getNickname() == nickname){
+          p.setRoundsWon(endRoundUpdate.nextPlayerOrderAndTaken[nickname]!);
+          break;
+        }
+      }
+    }
+    game.setSet(endRoundUpdate.nextRoundNumber);
+  }
+
+  @override
+  handleEndSetUpdate(EndSetUpdate endSetUpdate) {
+
+    for(Player p in game.players){
+      for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
+        if(p.getNickname() == nickname){
+          p.setScore(endSetUpdate.nextPlayerOrderAndScore[nickname]!);
+          break;
+        }
+      }
+    }
+    game.setSet(endSetUpdate.nextSetNumber);
   }
 
 }

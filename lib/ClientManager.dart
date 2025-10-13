@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:test_socket/message/EndRoundUpdate.dart';
+import 'package:test_socket/message/EndSetUpdate.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/message/LoginResponse.dart';
 import 'package:test_socket/message/Message.dart';
@@ -84,6 +86,12 @@ class ClientManager {
       message = Message.fromJson(jsonMap, executable);
     }else if(stringMessageType == 'TEXT_MESSAGE') {
       executable = TextMessage.fromJson(jsonMap);
+      message = Message.fromJson(jsonMap, executable);
+    } else if(stringMessageType == 'END_ROUND'){
+      executable = EndRoundUpdate.fromJson(jsonMap);
+      message = Message.fromJson(jsonMap, executable);
+    } else if(stringMessageType == 'END_SET'){
+      executable = EndSetUpdate.fromJson(jsonMap);
       message = Message.fromJson(jsonMap, executable);
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');
