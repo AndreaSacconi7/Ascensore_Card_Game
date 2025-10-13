@@ -10,9 +10,6 @@ class StartingGame implements ExecutableInClient {
   StartingGame.fromJson(Map<String, dynamic> json) :
     connectedPlayers = List<String>.from(json['executable']['connectedPlayers'] as List);
 
-
-
-
   @override
   void execute({required PageInterface page}) {
     page.handleStartingGame(this);

@@ -11,6 +11,14 @@ class CardGame {
         seed = Seed.values.firstWhere((e) => e.toString() == 'Seed.' + json['seed']),
         value = json['value'] as int;
 
+  /*
+  Map<String, dynamic> toJson() {
+    return {
+      'seed': seed.toString().split('.').last,
+      'value': value,
+    };
+  }*/
+
   Seed getSeed() {
     return seed;
   }

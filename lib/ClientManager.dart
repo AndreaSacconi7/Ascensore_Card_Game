@@ -82,6 +82,9 @@ class ClientManager {
     }else if(stringMessageType == 'PLAYER_STATE_UPDATE') {
       executable = PlayerStateUpdate.fromJson(jsonMap);
       message = Message.fromJson(jsonMap, executable);
+    }else if(stringMessageType == 'TEXT_MESSAGE') {
+      executable = TextMessage.fromJson(jsonMap);
+      message = Message.fromJson(jsonMap, executable);
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');
       return;

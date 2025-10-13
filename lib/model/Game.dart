@@ -62,4 +62,14 @@ class Game {
     return turn;
   }
 
+  bool checkIfValidBet(int bet) {
+    int totalBets = bet;
+    for(Player player in players) {
+      totalBets += player.getBet();
+    }
+    if(totalBets == set) {
+      return false;
+    }
+    return true;
+  }
 }

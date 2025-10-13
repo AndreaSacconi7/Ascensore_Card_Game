@@ -7,6 +7,10 @@ class TextMessage implements ExecutableInClient {
 
   TextMessage(this.text);
 
+  TextMessage.fromJson(Map<String, dynamic> json) :
+        text = json['executable']['text'] as String;
+
+
   @override
   void execute({required PageInterface page}) {
     page.handleTextMessage(this);

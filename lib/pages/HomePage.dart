@@ -14,6 +14,9 @@ import 'package:test_socket/widgets/BetWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../command/CommandType.dart';
+import '../command/PutCard.dart';
+import '../command/SetBet.dart';
 import '../model/CardGame.dart';
 import '../model/PlayerState.dart';
 import '../widgets/CardWidget.dart';
@@ -38,6 +41,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
   Game game = Game();
 
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +55,9 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   }
 
   void _sendCommand(Command command) {
-    widget.clientManager.sendCommand(command);
+
+    final jsonCommand = command.toJson();
+    widget.clientManager.sendCommand(jsonCommand);
   }
 
   @override
@@ -118,6 +124,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
           ? game.players.map((player) => PlayerWidget(
         name: player.getNickname(),
         avatarUrl: "default_avatar_url",
+        player: player,
       )).toList()
           : [Text('No players available yet')],
     );
@@ -192,10 +199,24 @@ class _HomePageState extends State<HomePage> implements PageInterface {
                     SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // Close the overlay
-                        widget.clientManager.mySelfPlayer?.setBet(sliderValue.toInt());
-                        print('Bet confirmed: ${widget.clientManager.mySelfPlayer?.getBet()}');
-                        //TODO: invio command con BET al server
+                        if(game.checkIfValidBet(sliderValue.toInt())){
+                          Navigator.of(context).pop(); // Close the overlay
+                          widget.clientManager.mySelfPlayer?.setBet(sliderValue.toInt());
+                          print('Bet confirmed: ${widget.clientManager.mySelfPlayer?.getBet()}');
+                          //imposto il valore del bet nel player e nel BetWidget
+                          widget.clientManager.mySelfPlayer!.setBet(sliderValue.toInt());
+                          //invio command con il bet al server
+                          SetBet setBetExecutable = SetBet(bet: sliderValue.toInt(), nickname: widget.clientManager.mySelfPlayer!.getNickname());
+
+                          Command command = Command(
+                            commandType: CommandType.SET_BET,
+                            executable: setBetExecutable,
+                            nickName: widget.clientManager.mySelfPlayer!.getNickname(),
+                          );
+                          _sendCommand(command);
+                        }else{
+                          showMessage('Invalid bet! Please choose a different value.');
+                        }
                       },
                       child: Text('Confirm'),
                     ),
@@ -210,9 +231,9 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   }
 
   Widget _buildBetAndTakenRow() {
-    return const Row(
+    return Row(
       children: [
-        BetWidget(),
+        BetWidget(betNotifier: widget.clientManager.mySelfPlayer!.betNotifier),
         TakenWidget(),
       ],
     );
@@ -263,10 +284,29 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   }
 
   Widget _buildDropZone() {
+    CardGame? droppedCard; // Variabile per tenere traccia della carta rilasciata
+
     return DragTarget<CardGame>(
-      onAcceptWithDetails: (card) {
-        //print('Card dropped: ${card.getImagePath()}');
-        // Gestisci il comportamento quando una carta viene rilasciata
+      onAcceptWithDetails: (details) {
+        //TODO: controllare che sia il turno del giocatore e che la carta sia valida
+        setState(() {
+          // Imposta la carta rilasciata
+          droppedCard = details.data;
+
+          if(_isValidPutCard(droppedCard!)){
+            // Rimuovi la carta dalla mano
+            widget.clientManager.mySelfPlayer?.removeCardFromHand(droppedCard!);
+
+            // Invia la carta giocata al server
+            PutCard putCardExecutable = PutCard(droppedCard!.seed, droppedCard!.value, widget.clientManager.mySelfPlayer!.getNickname());
+            Command command = Command(
+              commandType: CommandType.PUT_CARD,
+              executable: putCardExecutable,
+              nickName: widget.clientManager.mySelfPlayer!.getNickname(),
+            );
+            _sendCommand(command);
+          }
+        });
       },
       builder: (BuildContext context, List<CardGame?> candidateData, List<dynamic> rejectedData) {
         return Container(
@@ -274,14 +314,29 @@ class _HomePageState extends State<HomePage> implements PageInterface {
           width: 120,
           color: Colors.green.withOpacity(0.5),
           child: Center(
-            child: Text(
+            child: droppedCard != null
+                ? CardWidget(card: droppedCard!) // Mostra la carta rilasciata
+                : Text(
               candidateData.isNotEmpty ? 'Drop here!' : 'Drop Zone',
-              style: candidateData.isNotEmpty ? TextStyle(color: Colors.red) : TextStyle(color: Colors.white),
+              style: candidateData.isNotEmpty
+                  ? TextStyle(color: Colors.red)
+                  : TextStyle(color: Colors.white),
             ),
           ),
         );
       },
     );
+  }
+
+  bool _isValidPutCard(CardGame card) {
+
+    if(widget.clientManager.mySelfPlayer!.playerState != PlayerState.PUT){
+      showMessage('You cannot play now, wait for your turn!');
+      return false;
+    }else{
+      //TODO: controllare se la carta è valida secondo le regole dei seed
+      return true;
+    }
   }
 
   @override
@@ -326,6 +381,8 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   @override
   handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {
 
+    showMessage('Player ${playerStateUpdate.nickname} is now in ${playerStateUpdate.playerState.toString().split('.').last} state');
+
     setState(() {
       for(var p in game.players){
         if(p.getNickname() == playerStateUpdate.nickname){
@@ -346,6 +403,12 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(textMessage.text)),
+    );
+  }
+
+  showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 

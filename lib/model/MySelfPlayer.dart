@@ -17,6 +17,6 @@ class MySelfPlayer extends Player{
   }
 
   void removeCardFromHand(CardGame card) {
-    //TODO: da implementare
+    handCards.removeWhere((c) => c.seed == card.seed && c.value == card.value);
   }
 }

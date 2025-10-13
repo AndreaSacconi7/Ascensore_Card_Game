@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
+import '../model/Player.dart';
 import 'BetWidget.dart';
 
 class PlayerWidget extends StatelessWidget {
   final String name;
   final String avatarUrl;
+  final Player player;
 
   const PlayerWidget({
-    Key? key,
+    super.key,
     required this.name,
     required this.avatarUrl,
-  }) : super(key: key);
+    required this.player
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +57,11 @@ class PlayerWidget extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           // Two Bet Widgets
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
+              BetWidget(betNotifier: player.betNotifier),
               TakenWidget(),
-              BetWidget(),
             ],
           ),
         ],

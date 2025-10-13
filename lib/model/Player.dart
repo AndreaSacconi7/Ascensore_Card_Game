@@ -1,4 +1,5 @@
 
+import 'package:flutter/material.dart';
 import 'package:test_socket/model/CardGame.dart';
 import 'package:test_socket/model/PlayerState.dart';
 
@@ -6,7 +7,7 @@ class Player {
 
   final String nickname;
   int score = 0;
-  int bet = 0;
+  final ValueNotifier<int> betNotifier = ValueNotifier<int>(0);
   int roundsWon = 0;
   //PlayerState state = PlayerState.WAITING;
   CardGame? playedCard;
@@ -27,11 +28,11 @@ class Player {
   }
 
   void setBet(int newBet) {
-    bet = newBet;
+    betNotifier.value = newBet; // Aggiorna il valore e notifica i listener
   }
 
   int getBet() {
-    return bet;
+    return betNotifier.value;
   }
 
   void setRoundsWon(int newRoundsWon) {
