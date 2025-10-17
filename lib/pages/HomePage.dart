@@ -6,11 +6,14 @@ import 'package:test_socket/message/EndRoundUpdate.dart';
 import 'package:test_socket/message/EndSetUpdate.dart';
 import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/LoginResponse.dart';
+import 'package:test_socket/message/PlayedCardUpdate.dart';
 import 'package:test_socket/message/PlayerStateUpdate.dart';
+import 'package:test_socket/message/SettedBetUpdate.dart';
 import 'package:test_socket/message/StartingGame.dart';
 import 'package:test_socket/message/TextMessage.dart';
 import 'package:test_socket/model/Game.dart';
 import 'package:test_socket/model/Player.dart';
+import 'package:test_socket/model/Seed.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
@@ -22,6 +25,7 @@ import '../command/SetBet.dart';
 import '../model/CardGame.dart';
 import '../model/PlayerState.dart';
 import '../widgets/CardWidget.dart';
+import '../widgets/PlayedCardWidget.dart';
 import '../widgets/PlayerWidget.dart';
 
 class HomePage extends StatefulWidget {
@@ -134,10 +138,10 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
   Widget _buildTopCardRow() {
     final topPlayer = game.players.isNotEmpty ? game.players[0] : null;
-    return topPlayer?.playedCard != null
+    return topPlayer?.playedCardNotifier.value != null
         ? Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [CardWidget(card: topPlayer!.playedCard!)],
+      children: [PlayedCardWidget(playedCardNotifier: topPlayer!.playedCardNotifier)],
     )
         : SizedBox.shrink();
   }
@@ -155,8 +159,8 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
   Widget _buildPlayerCard(int playerIndex) {
     final player = game.players.length > playerIndex ? game.players[playerIndex] : null;
-    return player?.playedCard != null
-        ? CardWidget(card: player!.playedCard!)
+    return player?.playedCardNotifier.value != null
+        ? PlayedCardWidget(playedCardNotifier: player!.playedCardNotifier)
         : SizedBox.shrink();
   }
 
@@ -236,7 +240,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
     return Row(
       children: [
         BetWidget(betNotifier: widget.clientManager.mySelfPlayer!.betNotifier),
-        TakenWidget(),
+        TakenWidget(roundsWonNotifier: widget.clientManager.mySelfPlayer!.roundsWonNotifier),
       ],
     );
   }
@@ -336,7 +340,25 @@ class _HomePageState extends State<HomePage> implements PageInterface {
       showMessage('You cannot play now, wait for your turn!');
       return false;
     }else{
-      //TODO: controllare se la carta è valida secondo le regole dei seed
+      for(Player p in game.players){
+        if(p.playedCardNotifier.value == null){
+          //è il primo giocatore a dover giocare
+          return true;
+        }
+      }
+      //TODO: controllare che se la carta non è dello stesso seed della carta giocata dal primo giocatore allora non deve averne una dello stesso seed in mano
+      /*else if(card.getSeed() == game.getTableCard().getPlayedCards().get(0).getSeed()){
+    //se la carta giocata ha lo stesso seed della prima carta giocata allora è valida sicuro
+    return true;
+    }
+
+    for(int i = 0; i < player.getHand().size(); i++){
+    if(player.getHand().get(i).getSeed() == game.getTableCard().getPlayedCards().get(0).getSeed()){
+    //se il player ha in mano una carta dello stesso seed rispetto la prima carta giocata deve giocarla
+    return false;
+    }
+    }
+    return true;*/
       return true;
     }
   }
@@ -417,29 +439,69 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   @override
   handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {
 
-    for(Player p in game.players){
-      for(String nickname in endRoundUpdate.nextPlayerOrderAndTaken.keys){
-        if(p.getNickname() == nickname){
-          p.setRoundsWon(endRoundUpdate.nextPlayerOrderAndTaken[nickname]!);
-          break;
+    setState(() {
+      for(Player p in game.players){
+        for(String nickname in endRoundUpdate.nextPlayerOrderAndTaken.keys){
+          if(p.getNickname() == nickname){
+            p.setRoundsWon(endRoundUpdate.nextPlayerOrderAndTaken[nickname]!);
+            break;
+          }
         }
       }
-    }
-    game.setSet(endRoundUpdate.nextRoundNumber);
+      game.setSet(endRoundUpdate.nextRoundNumber);
+
+      for(var p in game.players){
+        p.setPlayedCard(new CardGame(Seed.VOID, 0));
+        p.setRoundsWon(0);
+      }
+    });
   }
 
   @override
   handleEndSetUpdate(EndSetUpdate endSetUpdate) {
 
-    for(Player p in game.players){
-      for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
-        if(p.getNickname() == nickname){
-          p.setScore(endSetUpdate.nextPlayerOrderAndScore[nickname]!);
+    setState(() {
+      for(Player p in game.players){
+        for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
+          if(p.getNickname() == nickname){
+            p.setScore(endSetUpdate.nextPlayerOrderAndScore[nickname]!);
+            break;
+          }
+        }
+      }
+      game.setSet(endSetUpdate.nextSetNumber);
+
+      for(var p in game.players){
+        p.setPlayedCard(new CardGame(Seed.VOID, 0));
+        p.setRoundsWon(0);
+      }
+    });
+  }
+
+  @override
+  handlePlayedCard(PlayedCardUpdate playedCardUpdate) {
+
+    setState(() {
+      for(var p in game.players){
+        if(p.getNickname() == playedCardUpdate.nickname){
+          p.setPlayedCard(playedCardUpdate.playedCard);
           break;
         }
       }
-    }
-    game.setSet(endSetUpdate.nextSetNumber);
+    });
+  }
+
+  @override
+  handleSettedBet(SettedBetUpdate settedBetUpdate) {
+
+    setState(() {
+      for(var p in game.players){
+        if(p.getNickname() == settedBetUpdate.nickname){
+          p.setBet(settedBetUpdate.bet);
+          break;
+        }
+      }
+    });
   }
 
 }

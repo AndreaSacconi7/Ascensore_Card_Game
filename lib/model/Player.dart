@@ -8,9 +8,9 @@ class Player {
   final String nickname;
   int score = 0;
   final ValueNotifier<int> betNotifier = ValueNotifier<int>(0);
-  int roundsWon = 0;
+  final ValueNotifier<int> roundsWonNotifier = ValueNotifier<int>(0);
   //PlayerState state = PlayerState.WAITING;
-  CardGame? playedCard;
+  final ValueNotifier<CardGame?> playedCardNotifier = ValueNotifier<CardGame?>(null);
   PlayerState playerState = PlayerState.IDLE;
 
   Player(this.nickname);
@@ -36,19 +36,23 @@ class Player {
   }
 
   void setRoundsWon(int newRoundsWon) {
-    roundsWon = newRoundsWon;
+    roundsWonNotifier.value = newRoundsWon;
   }
 
   int getRoundsWon() {
-    return roundsWon;
+    return roundsWonNotifier.value;
   }
 
-  void setPlayedCard(CardGame card) {
-    playedCard = card;
+  void setPlayedCard(CardGame? card) {
+    playedCardNotifier.value = card;        // Aggiorna il valore e notifica i listener
+  }
+
+  void clearPlayedCard() {
+    playedCardNotifier.value = null;        // Aggiorna il valore e notifica i listener
   }
 
   CardGame? getPlayedCard() {
-    return playedCard;
+    return playedCardNotifier.value;
   }
 
   void setPlayerState(PlayerState newState) {

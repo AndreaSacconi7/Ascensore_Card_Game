@@ -7,7 +7,9 @@ import 'package:test_socket/message/EndRoundUpdate.dart';
 import 'package:test_socket/message/EndSetUpdate.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/message/HandUpdate.dart';
+import 'package:test_socket/message/PlayedCardUpdate.dart';
 import 'package:test_socket/message/PlayerStateUpdate.dart';
+import 'package:test_socket/message/SettedBetUpdate.dart';
 import 'package:test_socket/message/StartingGame.dart';
 import 'package:test_socket/message/TextMessage.dart';
 import 'package:test_socket/model/MySelfPlayer.dart';
@@ -191,6 +193,18 @@ class _LoginPageState extends State<LoginPage> implements PageInterface{
   handleEndSetUpdate(EndSetUpdate endSetUpdate) {
 
     print("END SET UPDATE in LoginPage, should not happen--------------------------------------------------------------------");
+  }
+
+  @override
+  handlePlayedCard(PlayedCardUpdate playedCardUpdate) {
+
+    print("PLAYED CARD UPDATE in LoginPage, should not happen--------------------------------------------------------------------");
+  }
+
+  @override
+  handleSettedBet(SettedBetUpdate settedBetUpdate) {
+
+    print("SETTED BET UPDATE in LoginPage, should not happen--------------------------------------------------------------------");
   }
 
 }

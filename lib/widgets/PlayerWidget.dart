@@ -61,7 +61,7 @@ class PlayerWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               BetWidget(betNotifier: player.betNotifier),
-              TakenWidget(),
+              TakenWidget(roundsWonNotifier: player.roundsWonNotifier),
             ],
           ),
         ],

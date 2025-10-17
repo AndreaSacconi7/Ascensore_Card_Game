@@ -4,4 +4,5 @@ enum Seed {
   SWORDS,
   COINS,
   CUPS,
+  VOID
 }

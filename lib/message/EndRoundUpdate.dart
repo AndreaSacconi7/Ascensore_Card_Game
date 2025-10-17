@@ -18,7 +18,8 @@ class EndRoundUpdate implements ExecutableInClient {
 
   @override
   void execute({required PageInterface page}) {
-    // TODO: implement execute
+
+    page.handleEndRoundUpdate(this);
   }
 
 

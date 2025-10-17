@@ -14,7 +14,9 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'message/BriscolaUpdate.dart';
 import 'message/HandUpdate.dart';
+import 'message/PlayedCardUpdate.dart';
 import 'message/PlayerStateUpdate.dart';
+import 'message/SettedBetUpdate.dart';
 import 'message/StartingGame.dart';
 
 
@@ -71,32 +73,30 @@ class ClientManager {
 
     if(stringMessageType == 'LOGIN_RESPONSE') {
       executable = LoginResponse.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
     }else if(stringMessageType == 'HAND_UPDATE') {
       executable = HandUpdate.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
     }else if(stringMessageType == 'BRISCOLA_UPDATE') {
       executable = BriscolaUpdate.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
     }else if(stringMessageType == 'STARTING_GAME') {
       executable = StartingGame.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
     }else if(stringMessageType == 'PLAYER_STATE_UPDATE') {
       executable = PlayerStateUpdate.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
+    }else if(stringMessageType == 'SETTED_BET'){
+      executable = SettedBetUpdate.fromJson(jsonMap);
+    }else if(stringMessageType == 'PLAYED_CARD'){
+      executable = PlayedCardUpdate.fromJson(jsonMap);
     }else if(stringMessageType == 'TEXT_MESSAGE') {
       executable = TextMessage.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
     } else if(stringMessageType == 'END_ROUND'){
       executable = EndRoundUpdate.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
     } else if(stringMessageType == 'END_SET'){
       executable = EndSetUpdate.fromJson(jsonMap);
-      message = Message.fromJson(jsonMap, executable);
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');
       return;
     }
+
+    message = Message.fromJson(jsonMap, executable);
 
     enqueueMessage(message);
     // Puoi aggiornare lo stato del widget in base ai messaggi ricevuti
@@ -120,9 +120,12 @@ class ClientManager {
           }
           if (_isRunning) {
             message = _messageQueue.removeFirst();
+            await message!.execute(currentPage!); // Now this will wait for completion
           }
-        });
-        message?.execute(currentPage!);
+        });/*
+        if (message != null) {
+          await message!.execute(currentPage!); // Now this will wait for completion
+        }*/
       }
     });
   }

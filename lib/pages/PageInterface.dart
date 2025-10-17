@@ -4,7 +4,9 @@ import 'package:test_socket/message/EndRoundUpdate.dart';
 import 'package:test_socket/message/EndSetUpdate.dart';
 import 'package:test_socket/message/HandUpdate.dart';
 import 'package:test_socket/message/Message.dart';
+import 'package:test_socket/message/PlayedCardUpdate.dart';
 import 'package:test_socket/message/PlayerStateUpdate.dart';
+import 'package:test_socket/message/SettedBetUpdate.dart';
 import 'package:test_socket/message/StartingGame.dart';
 import 'package:test_socket/message/TextMessage.dart';
 
@@ -29,4 +31,8 @@ abstract class PageInterface {
   handleEndRoundUpdate(EndRoundUpdate endRoundUpdate);
 
   handleEndSetUpdate(EndSetUpdate endSetUpdate);
+
+  handlePlayedCard(PlayedCardUpdate playedCardUpdate);
+
+  handleSettedBet(SettedBetUpdate settedBetUpdate);
 }

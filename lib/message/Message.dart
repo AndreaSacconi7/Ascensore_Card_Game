@@ -36,7 +36,7 @@ class Message {
     };
   }*/
 
-  void execute(PageInterface page) {
+  Future<void> execute(PageInterface page) async {
     executable.execute(page: page);
   }
 }

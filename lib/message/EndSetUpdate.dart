@@ -17,5 +17,6 @@ class EndSetUpdate implements ExecutableInClient {
   @override
   void execute({required PageInterface page}) {
 
+    page.handleEndSetUpdate(this);
   }
 }
