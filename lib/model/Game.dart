@@ -5,6 +5,8 @@ class Game {
 
   List<Player> players = [];
 
+  List<Player> playerOrder = [];
+
   CardGame? briscola;
 
   int set = 1;
@@ -28,6 +30,10 @@ class Game {
         break;
       }
     }
+  }
+
+  void setPlayerOrder(List<Player> newPlayers) {
+    playerOrder = newPlayers;
   }
 
   void setBriscola(CardGame card) {
@@ -60,18 +66,5 @@ class Game {
 
   int getTurn() {
     return turn;
-  }
-
-  //TODO: implementare il controllo della scommessa uguale al server
-  bool checkIfValidBet(int bet) {
-    int totalBets = bet;
-    /*
-    for(Player player in players) {
-      totalBets += player.getBet();
-    }
-    if(totalBets == set) {
-      return false;
-    }*/
-    return true;
   }
 }

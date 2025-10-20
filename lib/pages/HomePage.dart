@@ -16,6 +16,7 @@ import 'package:test_socket/model/Player.dart';
 import 'package:test_socket/model/Seed.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 import 'package:test_socket/widgets/BetWidget.dart';
+import 'package:test_socket/widgets/ScoreWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -205,7 +206,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
                     SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        if(game.checkIfValidBet(sliderValue.toInt())){
+                        if(checkIfValidBet(sliderValue.toInt())){
                           Navigator.of(context).pop(); // Close the overlay
                           widget.clientManager.mySelfPlayer?.setBet(sliderValue.toInt());
                           print('Bet confirmed: ${widget.clientManager.mySelfPlayer?.getBet()}');
@@ -241,6 +242,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
       children: [
         BetWidget(betNotifier: widget.clientManager.mySelfPlayer!.betNotifier),
         TakenWidget(roundsWonNotifier: widget.clientManager.mySelfPlayer!.roundsWonNotifier),
+        ScoreWidget(scoreNotifier: widget.clientManager.mySelfPlayer!.scoreNotifier),
       ],
     );
   }
@@ -384,7 +386,6 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
     setState(() {
       //aggiungo me stesso alla lista di giocatori nel game
-      game.addPlayer(widget.clientManager.mySelfPlayer!);
 
       //aggiungo altri player alla lista di giocatori nel game
       for(var playerNick in startingGame.connectedPlayers){
@@ -396,9 +397,15 @@ class _HomePageState extends State<HomePage> implements PageInterface {
           }
         }
         if(!finded){
-          game.addPlayer(Player(playerNick));
+          if(playerNick != widget.clientManager.mySelfPlayer!.getNickname()) {
+            game.addPlayer(Player(playerNick));
+          } else {
+            game.addPlayer(widget.clientManager.mySelfPlayer!);
+          }
         }
       }
+      //players inviati dal server sono già in ordine di turno
+      game.setPlayerOrder(game.players);
     });
   }
 
@@ -425,12 +432,14 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   @override
   handleTextMessage(TextMessage textMessage) {
 
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(textMessage.text)),
     );
   }
 
   showMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
@@ -440,19 +449,23 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {
 
     setState(() {
-      for(Player p in game.players){
-        for(String nickname in endRoundUpdate.nextPlayerOrderAndTaken.keys){
+      List<Player> newPlayerOrder = [];
+      for(String nickname in endRoundUpdate.nextPlayerOrderAndTaken.keys){
+        for(Player p in game.players){
           if(p.getNickname() == nickname){
             p.setRoundsWon(endRoundUpdate.nextPlayerOrderAndTaken[nickname]!);
+            newPlayerOrder.add(p);
             break;
           }
         }
       }
+
+      game.setPlayerOrder(newPlayerOrder);
+
       game.setSet(endRoundUpdate.nextRoundNumber);
 
       for(var p in game.players){
         p.setPlayedCard(new CardGame(Seed.VOID, 0));
-        p.setRoundsWon(0);
       }
     });
   }
@@ -461,19 +474,26 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   handleEndSetUpdate(EndSetUpdate endSetUpdate) {
 
     setState(() {
-      for(Player p in game.players){
-        for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
+      List<Player> newPlayerOrder = [];
+
+      for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
+        for(Player p in game.players){
           if(p.getNickname() == nickname){
             p.setScore(endSetUpdate.nextPlayerOrderAndScore[nickname]!);
+            newPlayerOrder.add(p);
             break;
           }
         }
       }
+
+      game.setPlayerOrder(newPlayerOrder);
+
       game.setSet(endSetUpdate.nextSetNumber);
 
       for(var p in game.players){
         p.setPlayedCard(new CardGame(Seed.VOID, 0));
         p.setRoundsWon(0);
+        p.setBet(0);
       }
     });
   }
@@ -502,6 +522,23 @@ class _HomePageState extends State<HomePage> implements PageInterface {
         }
       }
     });
+  }
+
+
+  bool checkIfValidBet(int bet) {
+    int totalBets = bet;
+    //se non sono l'ultimo posso scommettere liberamente
+    if(game.playerOrder[game.playerOrder.length -1].nickname != widget.clientManager.getMySelfPlayer()!.nickname) {
+      return true;
+    }
+    //eseguo questa parte solo se sono l'ultimo a dover scommettere
+    for(Player p in game.playerOrder){
+      totalBets += p.getBet();
+    }
+    if(totalBets == game.getSet()){
+      return false;
+    }
+    return true;
   }
 
 }

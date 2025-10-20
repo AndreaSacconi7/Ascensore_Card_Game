@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_socket/widgets/ScoreWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
 import '../model/Player.dart';
 import 'BetWidget.dart';
@@ -56,6 +57,12 @@ class PlayerWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ScoreWidget(scoreNotifier: player.scoreNotifier),
+            ]
+          ),
           // Two Bet Widgets
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,

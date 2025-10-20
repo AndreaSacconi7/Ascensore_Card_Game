@@ -12,7 +12,7 @@ class SettedBetUpdate implements ExecutableInClient {
 
   @override
   void execute({required PageInterface page}) {
-
+    page.handleSettedBet(this);
   }
 
 }

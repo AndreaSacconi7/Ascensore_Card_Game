@@ -6,7 +6,7 @@ import 'package:test_socket/model/PlayerState.dart';
 class Player {
 
   final String nickname;
-  int score = 0;
+  final ValueNotifier<int> scoreNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> betNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> roundsWonNotifier = ValueNotifier<int>(0);
   //PlayerState state = PlayerState.WAITING;
@@ -16,11 +16,11 @@ class Player {
   Player(this.nickname);
 
   void setScore(int newScore) {
-    score = newScore;
+    scoreNotifier.value = newScore;
   }
 
   int getScore() {
-    return score;
+    return scoreNotifier.value;
   }
 
   String getNickname() {
