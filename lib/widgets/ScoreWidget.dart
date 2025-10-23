@@ -9,20 +9,21 @@ class ScoreWidget extends StatelessWidget{
   Widget build(BuildContext context) {
 
     return ValueListenableBuilder<int>(
-      valueListenable: scoreNotifier,
-      builder: (context, scoreValue, child) {
-        return Row(
-          children: [
-            Text(
-              scoreValue.toString(),
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+        valueListenable: scoreNotifier,
+        builder: (context, scoreValue, child) {
+          return Row(
+            children: [
+              Text(
+                  "$scoreValue pt",
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  )
               )
-            )
-          ],
-        );
-      }
+            ],
+          );
+        }
     );
   }
 

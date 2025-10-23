@@ -11,8 +11,8 @@ class PlayedCardWidget extends StatelessWidget {
   const PlayedCardWidget({
     super.key,
     required this.playedCardNotifier,
-    this.width = 92,
-    this.height = 95,
+    this.width = 51,
+    this.height = 85,
   });
 
   @override
@@ -22,10 +22,10 @@ class PlayedCardWidget extends StatelessWidget {
       builder: (context, playedCard, child) {
         print('PlayedCardWidget rebuild: ${playedCard?.seed ?? "null"}');
         if (playedCard == null || playedCard.getSeed() == Seed.VOID) {
-          return Container(
+          return SizedBox(
             width: width,
             height: height,
-            decoration: BoxDecoration(
+            /*decoration: BoxDecoration(
               color: Colors.grey,
               borderRadius: BorderRadius.circular(8),
             ),
@@ -34,7 +34,7 @@ class PlayedCardWidget extends StatelessWidget {
                 'No Card',
                 style: TextStyle(color: Colors.white),
               ),
-            ),
+            ),*/
           );
         }
 

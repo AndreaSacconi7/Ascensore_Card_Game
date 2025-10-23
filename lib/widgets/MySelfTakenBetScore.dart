@@ -4,15 +4,11 @@ import 'package:test_socket/widgets/TakenWidget.dart';
 import '../model/Player.dart';
 import 'BetWidget.dart';
 
-class PlayerWidget extends StatelessWidget {
-  final String name;
-  final String avatarUrl;
+class MySelfBetTakenScoreWidget extends StatelessWidget {
   final Player player;
 
-  const PlayerWidget({
+  const MySelfBetTakenScoreWidget({
     super.key,
-    required this.name,
-    required this.avatarUrl,
     required this.player
   });
 
@@ -31,32 +27,7 @@ class PlayerWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Player Name
-          Text(
-            name,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontFamily: 'Late',
-              fontWeight: FontWeight.w400,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 15),
-          // Player Avatar
-          Container(
-            width: avatarSize,
-            height: avatarSize,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/cards/yoga.png'),
-                fit: BoxFit.cover,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          const SizedBox(height: 15),
+          // Score Widget
           Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

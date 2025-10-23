@@ -37,7 +37,7 @@ class BetWidget extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 10,
+                  fontSize: 14,
                   fontFamily: 'Lato',
                   fontWeight: FontWeight.w700,
                   height: 1,

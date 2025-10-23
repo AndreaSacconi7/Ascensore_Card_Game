@@ -10,8 +10,8 @@ class CardWidget extends StatelessWidget {
   const CardWidget({
     super.key,
     required this.card,
-    this.width = 92,
-    this.height = 95,
+    this.width = 51,
+    this.height = 85,
   });
 
   @override

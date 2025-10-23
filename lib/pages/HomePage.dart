@@ -26,6 +26,8 @@ import '../command/SetBet.dart';
 import '../model/CardGame.dart';
 import '../model/PlayerState.dart';
 import '../widgets/CardWidget.dart';
+import '../widgets/HandCards.dart';
+import '../widgets/MySelfTakenBetScore.dart';
 import '../widgets/PlayedCardWidget.dart';
 import '../widgets/PlayerWidget.dart';
 
@@ -48,6 +50,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
   Game game = Game();
 
+  CardGame? droppedCard; // Variabile per tenere traccia della carta rilasciata
 
   @override
   void initState() {
@@ -84,40 +87,68 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('WebSocket Demo')),
-      body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            // Riga in alto con i giocatori
-            _buildPlayersRow(),
+      /*appBar: AppBar(
+          //TODO: qua poi posso mettere qualche info di gioco
+          title: Text('Ascensore Game'),
+          titleTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontFamily: 'Late',
+            fontWeight: FontWeight.w400,
+            height: 1,
+          ),
+          centerTitle: true,
+          backgroundColor: const Color(0xff1f2023),
+      ),*/
+      body: Stack(
+        children: [
+          _buildDropZone(),
 
-            SizedBox(height: 20),
+          SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(height: 20),
+                // Riga in alto con i giocatori
+                _buildPlayersRow(),
 
-            // Riga con la carta giocata in alto
-            _buildTopCardRow(),
+                SizedBox(height: 40),
 
-            SizedBox(height: 20),
+                // Riga con la carta giocata in alto
+                _buildTopCardRow(),
 
-            // Riga centrale con le carte giocate dai giocatori e la briscola
-            _buildMiddleRow(),
+                SizedBox(height: 30),
 
-            SizedBox(height: 20),
+                // Riga centrale con le carte giocate dai giocatori e la briscola
+                _buildMiddleRow(),
 
-            _buildDropZone(),
+                SizedBox(height: 30),
 
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  _buildBetAndTakenRow(),
-                   SizedBox(height: 20),
-                  _buildHandCardsBar(),
-                ],
-              ),
+                //_buildDropZone(),
+
+                _buildMySelfPlayedCardRow(),
+
+                SizedBox(height: 30),
+
+                _buildBetAndTakenRow(),
+
+                //FanHandWidget(handCards: widget.clientManager.mySelfPlayer!.handCards, onPlayCard: (card) {}),
+
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      //_buildBetAndTakenRow(),
+                      //_buildHandCardsBar(),
+                      HandCards(clientManager: widget.clientManager),
+                      //HandCardsBar(clientManager: widget.clientManager),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       // Carte in basso
       //bottomNavigationBar: _buildHandCardsBar(),
@@ -152,10 +183,22 @@ class _HomePageState extends State<HomePage> implements PageInterface {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildPlayerCard(1),
+        SizedBox(width: 60),
         _buildBriscolaCard(),
+        SizedBox(width: 60),
         _buildPlayerCard(2),
       ],
     );
+  }
+
+  Widget _buildMySelfPlayedCardRow(){
+    final mySelfPlayer = widget.clientManager.mySelfPlayer;
+    return mySelfPlayer?.playedCardNotifier.value != null
+        ? Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [PlayedCardWidget(playedCardNotifier: mySelfPlayer!.playedCardNotifier)],
+    )
+        : SizedBox.shrink();
   }
 
   Widget _buildPlayerCard(int playerIndex) {
@@ -240,99 +283,73 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   Widget _buildBetAndTakenRow() {
     return Row(
       children: [
-        BetWidget(betNotifier: widget.clientManager.mySelfPlayer!.betNotifier),
-        TakenWidget(roundsWonNotifier: widget.clientManager.mySelfPlayer!.roundsWonNotifier),
-        ScoreWidget(scoreNotifier: widget.clientManager.mySelfPlayer!.scoreNotifier),
+        MySelfBetTakenScoreWidget(player: widget.clientManager.mySelfPlayer!),
+        //HoverLiftExample(child: CardWidget(card: game.briscola!)),
+        //ScrollHoverCards(colors: [Colors.black, Colors.blue, Colors.red, Colors.green, Colors.orange]),
       ],
     );
-  }
-
-  Widget _buildHandCardsBar() {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final handCards = widget.clientManager.mySelfPlayer?.handCards ?? [];
-        final cardWidth = 100.0;
-        final maxVisibleWidth = constraints.maxWidth;
-        final overlap = handCards.length * cardWidth > maxVisibleWidth
-            ? (handCards.length * cardWidth - maxVisibleWidth) / handCards.length
-            : 0.0;
-
-        return Container(
-          height: 160,
-          color: Colors.black12,
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: handCards.isNotEmpty
-                ? List.generate(handCards.length, (index) {
-              return Transform.translate(
-                offset: Offset(-index * overlap, 0),
-                child: Padding(
-                  padding: EdgeInsets.only(left: index == 0 ? 0 : 4.0),
-                  child: Draggable<CardGame>(
-                    data: handCards[index], // Passa i dati della carta
-                    feedback: Material(
-                      color: Colors.transparent,
-                      child: CardWidget(card: handCards[index]),
-                    ),
-                    childWhenDragging: Opacity(
-                      opacity: 0.5,
-                      child: CardWidget(card: handCards[index]),
-                    ),
-                    child: CardWidget(card: handCards[index]),
-                  ),
-                ),
-              );
-            })
-                : [const Text('No cards in hand')],
-          ),
-        );
-      },
-    );
+    /*return Column(
+      children:[
+        Row(
+          children: [
+            const Padding(padding:
+              EdgeInsets.only(
+                right: 45,
+              )
+            ),
+            ScoreWidget(scoreNotifier: widget.clientManager.mySelfPlayer!.scoreNotifier),
+          ],
+        ),
+        Row(
+          children: [
+            BetWidget(betNotifier: widget.clientManager.mySelfPlayer!.betNotifier),
+            TakenWidget(roundsWonNotifier: widget.clientManager.mySelfPlayer!.roundsWonNotifier),
+          ],
+        ),
+      ],
+    );*/
   }
 
   Widget _buildDropZone() {
-    CardGame? droppedCard; // Variabile per tenere traccia della carta rilasciata
+    return Positioned.fill(
+      bottom: MediaQuery.of(context).size.height / 4, // Altezza iniziale della dropZone
+      child: DragTarget<CardGame>(
+        onAcceptWithDetails: (details) {
+          setState(() {
+            droppedCard = details.data;
 
-    return DragTarget<CardGame>(
-      onAcceptWithDetails: (details) {
-        //TODO: controllare che sia il turno del giocatore e che la carta sia valida
-        setState(() {
-          // Imposta la carta rilasciata
-          droppedCard = details.data;
+            if (_isValidPutCard(droppedCard!)) {
+              widget.clientManager.mySelfPlayer?.removeCardFromHand(droppedCard!);
+              widget.clientManager.mySelfPlayer?.setPlayedCard(droppedCard!);
 
-          if(_isValidPutCard(droppedCard!)){
-            // Rimuovi la carta dalla mano
-            widget.clientManager.mySelfPlayer?.removeCardFromHand(droppedCard!);
-
-            // Invia la carta giocata al server
-            PutCard putCardExecutable = PutCard(droppedCard!.seed, droppedCard!.value, widget.clientManager.mySelfPlayer!.getNickname());
-            Command command = Command(
-              commandType: CommandType.PUT_CARD,
-              executable: putCardExecutable,
-              nickName: widget.clientManager.mySelfPlayer!.getNickname(),
-            );
-            _sendCommand(command);
-          }
-        });
-      },
-      builder: (BuildContext context, List<CardGame?> candidateData, List<dynamic> rejectedData) {
-        return Container(
-          height: 120,
-          width: 120,
-          color: Colors.green.withOpacity(0.5),
-          child: Center(
-            child: droppedCard != null
-                ? CardWidget(card: droppedCard!) // Mostra la carta rilasciata
-                : Text(
-              candidateData.isNotEmpty ? 'Drop here!' : 'Drop Zone',
-              style: candidateData.isNotEmpty
-                  ? TextStyle(color: Colors.red)
-                  : TextStyle(color: Colors.white),
+              PutCard putCardExecutable = PutCard(
+                droppedCard!.seed,
+                droppedCard!.value,
+                widget.clientManager.mySelfPlayer!.getNickname(),
+              );
+              Command command = Command(
+                commandType: CommandType.PUT_CARD,
+                executable: putCardExecutable,
+                nickName: widget.clientManager.mySelfPlayer!.getNickname(),
+              );
+              _sendCommand(command);
+            }
+          });
+        },
+        builder: (BuildContext context, List<CardGame?> candidateData, List<dynamic> rejectedData) {
+          return Container(
+            //color: Colors.green.withOpacity(0.1),
+            child: Center(
+              child: Text(
+                candidateData.isNotEmpty ? 'Drop here!' : '',
+                style: TextStyle(
+                  color: candidateData.isNotEmpty ? Colors.red : Colors.white,
+                ),
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

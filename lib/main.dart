@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:test_socket/ClientManager.dart';
+import 'package:test_socket/pages/MainMenuScreen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'pages/LoginPage.dart';
 
@@ -21,7 +22,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: LoginPage(clientManager: clientManager),
+      title: 'Ascensore Game',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          background: const Color(0xff1f2023),
+        ),
+        useMaterial3: true,
+      ),
+      //home: LoginPage(clientManager: clientManager),
+      home: MainMenuScreen(clientManager),
     );
   }
 }

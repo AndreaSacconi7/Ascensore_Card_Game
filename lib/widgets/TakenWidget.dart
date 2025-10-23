@@ -25,35 +25,35 @@ class _TakenWidgetState extends State<TakenWidget> {
       valueListenable: widget.roundsWonNotifier,
       builder: (context, roundsWon, child) {
         return Container(
-            width: buttonSize,
-            height: buttonHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-            clipBehavior: Clip.antiAlias,
-            decoration: ShapeDecoration(
-              color: const Color(0xFF2B2E4A),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(999),
-              ),
+          width: buttonSize,
+          height: buttonHeight,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+          clipBehavior: Clip.antiAlias,
+          decoration: ShapeDecoration(
+            color: const Color(0xFF2B2E4A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  roundsWon.toString(),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontFamily: 'Lato',
-                    fontWeight: FontWeight.w700,
-                    height: 1,
-                  ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                roundsWon.toString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontFamily: 'Lato',
+                  fontWeight: FontWeight.w700,
+                  height: 1,
                 ),
-              ],
-            ),
-          );
+              ),
+            ],
+          ),
+        );
       },
     );
   }
