@@ -29,7 +29,7 @@ class LoginPage extends StatefulWidget {
 
   ClientManager clientManager;
 
-  LoginPage({required this.clientManager});
+  LoginPage({super.key, required this.clientManager});
 
   @override
   _LoginPageState createState() => _LoginPageState();

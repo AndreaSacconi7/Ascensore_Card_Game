@@ -132,61 +132,61 @@ class MainMenuScreen extends StatelessWidget implements PageInterface {
 
   @override
   handleBriscolaUpdate(BriscolaUpdate briscolaUpdate) {
-    // TODO: implement handleBriscolaUpdate
-    throw UnimplementedError();
+
+    print("BRISCOLA UPDATE in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {
-    // TODO: implement handleEndRoundUpdate
-    throw UnimplementedError();
+
+    print("END ROUND UPDATE in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handleEndSetUpdate(EndSetUpdate endSetUpdate) {
-    // TODO: implement handleEndSetUpdate
-    throw UnimplementedError();
+
+    print("END SET UPDATE in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handleHandUpdate(HandUpdate handUpdate) {
-    // TODO: implement handleHandUpdate
-    throw UnimplementedError();
+
+    print("HAND UPDATE in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handleLoginResponse(LoginResponse response) {
-    // TODO: implement handleLoginResponse
-    throw UnimplementedError();
+
+    print("LOGIN RESPONSE in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handlePlayedCard(PlayedCardUpdate playedCardUpdate) {
-    // TODO: implement handlePlayedCard
-    throw UnimplementedError();
+
+    print("PLAYED CARD in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {
-    // TODO: implement handlePlayerStateUpdate
-    throw UnimplementedError();
+
+    print("PLAYER STATE UPDATE in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handleSettedBet(SettedBetUpdate settedBetUpdate) {
-    // TODO: implement handleSettedBet
-    throw UnimplementedError();
+
+    print("SETTED BET in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handleStartingGame(StartingGame startingGame) {
-    // TODO: implement handleStartingGame
-    throw UnimplementedError();
+
+    print("STARTING GAME in MainMenuScreen --------------------------------------------------------------------");
   }
 
   @override
   handleTextMessage(TextMessage textMessage) {
-    // TODO: implement handleTextMessage
-    throw UnimplementedError();
+
+    print("TEXT MESSAGE in MainMenuScreen: ${textMessage.text} --------------------------------------------------------------------");
   }
 }

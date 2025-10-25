@@ -359,25 +359,21 @@ class _HomePageState extends State<HomePage> implements PageInterface {
       showMessage('You cannot play now, wait for your turn!');
       return false;
     }else{
-      for(Player p in game.players){
-        if(p.playedCardNotifier.value == null){
-          //è il primo giocatore a dover giocare
-          return true;
+      if(game.playerOrder[0].nickname == widget.clientManager.mySelfPlayer!.nickname){
+        //se sono il primo giocatore a dover giocare allora posso giocare qualsiasi carta
+        return true;
+      }else if(game.playerOrder[0].playedCardNotifier.value == null || game.playerOrder[0].playedCardNotifier.value!.seed == card.seed){
+        //se la carta giocata ha lo stesso seed della prima carta giocata allora è valida
+        return true;
+      }
+      for(CardGame c in widget.clientManager.mySelfPlayer!.handCards){
+        if(c.seed == game.playerOrder[0].playedCardNotifier.value!.seed && c != card){
+          //se il player ha in mano una carta dello stesso seed rispetto la prima carta giocata deve giocarla
+          showMessage('You must play a card of the same seed as the first played card!');
+          return false;
         }
       }
-      //TODO: controllare che se la carta non è dello stesso seed della carta giocata dal primo giocatore allora non deve averne una dello stesso seed in mano
-      /*else if(card.getSeed() == game.getTableCard().getPlayedCards().get(0).getSeed()){
-    //se la carta giocata ha lo stesso seed della prima carta giocata allora è valida sicuro
-    return true;
-    }
-
-    for(int i = 0; i < player.getHand().size(); i++){
-    if(player.getHand().get(i).getSeed() == game.getTableCard().getPlayedCards().get(0).getSeed()){
-    //se il player ha in mano una carta dello stesso seed rispetto la prima carta giocata deve giocarla
-    return false;
-    }
-    }
-    return true;*/
+      //player non ha carte dello stesso seed (rispetto la prima carta giocata) quindi può giocare liberamente
       return true;
     }
   }
