@@ -28,6 +28,11 @@ class MyApp extends StatelessWidget {
           seedColor: Colors.deepPurple,
           background: const Color(0xff1f2023),
         ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white),
+          bodySmall: TextStyle(color: Colors.white),
+        ),
         useMaterial3: true,
       ),
       //home: LoginPage(clientManager: clientManager),

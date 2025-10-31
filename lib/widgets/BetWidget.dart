@@ -7,18 +7,23 @@ class BetWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    // Rimuoviamo i calcoli basati sulla percentuale dello schermo
+    // final screenWidth = MediaQuery.of(context).size.width;
+    // final playerWidgetWidth = screenWidth * 0.3; // 30% of screen width
 
-    final playerWidgetWidth = screenWidth * 0.3; // 30% of screen width
-    final buttonSize = playerWidgetWidth * 0.4; // 40% of widget width
-    final buttonHeight = buttonSize;
+    // --- SOLUZIONE ---
+    // Imposta una dimensione fissa.
+    // 50.0 è un esempio, aggiustalo tu se serve.
+    final double buttonSize = 50.0;
+    final double buttonHeight = buttonSize;
+    // --- FINE SOLUZIONE ---
 
     return ValueListenableBuilder<int>(
       valueListenable: betNotifier,
       builder: (context, betValue, child) {
         return Container(
-          width: buttonSize,
-          height: buttonHeight,
+          width: buttonSize, // Usa la larghezza fissa
+          height: buttonHeight, // Usa l'altezza fissa
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           clipBehavior: Clip.antiAlias,
           decoration: ShapeDecoration(

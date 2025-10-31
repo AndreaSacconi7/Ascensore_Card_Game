@@ -19,15 +19,22 @@ class PlayerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Get screen width and height
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
+    // NON ABBIAMO PIÙ BISOGNO DI MEDIASCREEN
+    // final screenWidth = MediaQuery.of(context).size.width;
+    // final screenHeight = MediaQuery.of(context).size.height;
 
-    // Calculate dynamic dimensions
-    final widgetWidth = screenWidth * 0.3; // 30% of screen width
-    final avatarSize = widgetWidth * 0.4; // 40% of widget width
+    // --- SOLUZIONE ---
+    // Imposta una larghezza fissa invece di una percentuale.
+    // 120.0 è un esempio, modificalo finché non trovi la dimensione
+    // che preferisci e che corrisponde a quella mobile.
+    final double widgetWidth = 120.0;
+    // --- FINE SOLUZIONE ---
+
+    // Questo calcolo ora userà la larghezza fissa (120.0 * 0.4)
+    final avatarSize = widgetWidth * 0.4;
 
     return SizedBox(
-      width: widgetWidth,
+      width: widgetWidth, // Usa la larghezza fissa
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

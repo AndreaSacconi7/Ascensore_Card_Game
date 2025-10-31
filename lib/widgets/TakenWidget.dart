@@ -12,14 +12,9 @@ class TakenWidget extends StatefulWidget {
 class _TakenWidgetState extends State<TakenWidget> {
   @override
   Widget build(BuildContext context) {
-    // Get screen width and height
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
 
-    // Calculate dynamic dimensions
-    final playerWidgetWidth = screenWidth * 0.3; // 30% of screen width
-    final buttonSize = playerWidgetWidth * 0.4; // 40% of widget width
-    final buttonHeight = buttonSize;
+    final double buttonSize = 50.0;
+    final double buttonHeight = buttonSize;
 
     return ValueListenableBuilder<int>(
       valueListenable: widget.roundsWonNotifier,

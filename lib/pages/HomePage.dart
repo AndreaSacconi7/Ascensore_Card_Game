@@ -52,10 +52,41 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
   CardGame? droppedCard; // Variabile per tenere traccia della carta rilasciata
 
+  // 2. Definisci i tuoi breakpoint (questi sono esempi comuni)
+  static const double tabletBreakpoint = 600.0;
+  static const double desktopBreakpoint = 900.0;
+
   @override
   void initState() {
     super.initState();
     widget.clientManager.setCurrentPage(this);
+
+    //TODO: popolo home con contenuti di test
+    game.players.add(widget.clientManager.mySelfPlayer!);
+    game.players.add(Player('Mark'));
+    game.players.add(Player('Lucy'));
+
+    for(var p in game.players){
+      p.setPlayedCard(CardGame(Seed.SWORDS, 3));
+    }
+
+    for(var p in game.players){
+      p.setBet(2);
+      p.setRoundsWon(1);
+      p.setScore(10);
+    }
+
+    /*List<CardGame> newHandCards = [
+      CardGame(Seed.SWORDS, 1),
+      CardGame(Seed.CUPS, 7),
+      CardGame(Seed.COINS, 3),
+      CardGame(Seed.STICKS, 10),
+      CardGame(Seed.SWORDS, 5),
+    ];*/
+
+    game.briscola = CardGame(Seed.COINS, 1);
+
+    //widget.clientManager.mySelfPlayer!.setHandCards(newHandCards);
   }
 
   void _handleMessage(dynamic message) {
@@ -86,78 +117,131 @@ class _HomePageState extends State<HomePage> implements PageInterface {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      /*appBar: AppBar(
-          //TODO: qua poi posso mettere qualche info di gioco
-          title: Text('Ascensore Game'),
-          titleTextStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontFamily: 'Late',
-            fontWeight: FontWeight.w400,
-            height: 1,
-          ),
-          centerTitle: true,
-          backgroundColor: const Color(0xff1f2023),
-      ),*/
-      body: Stack(
-        children: [
-          _buildDropZone(),
+    // 1. Ottieni la larghezza dello schermo
+    final double screenWidth = MediaQuery.of(context).size.width;
 
-          SafeArea(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                SizedBox(height: 20),
-                // Riga in alto con i giocatori
-                _buildPlayersRow(),
+    // Definisci i breakpoint
+    const double desktopBreakpoint = 900.0;
+    const double tabletBreakpoint = 600.0;
 
-                SizedBox(height: 40),
+    // 3. Restituisci il layout appropriato
+    if (screenWidth >= desktopBreakpoint) {
+      // --- Layout per PC/Desktop ---
+      return Scaffold(
+        body: Stack(
+          children: [
+            _buildDropZone(),
 
-                // Riga con la carta giocata in alto
-                _buildTopCardRow(),
+            SafeArea(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Usa Spacer invece di SizedBox per altezze flessibili
+                  Spacer(flex: 2), // Era SizedBox(height: 20)
 
-                SizedBox(height: 30),
+                  // Riga in alto con i giocatori
+                  _buildPlayersRow(),
 
-                // Riga centrale con le carte giocate dai giocatori e la briscola
-                _buildMiddleRow(),
+                  Spacer(flex: 4), // Era SizedBox(height: 40)
 
-                SizedBox(height: 30),
+                  // Riga con la carta giocata in alto
+                  _buildTopCardRow(),
 
-                //_buildDropZone(),
+                  Spacer(flex: 3), // Era SizedBox(height: 30)
 
-                _buildMySelfPlayedCardRow(),
+                  // Riga centrale con le carte giocate dai giocatori e la briscola
+                  _buildMiddleRow(),
 
-                SizedBox(height: 30),
+                  Spacer(flex: 3), // Era SizedBox(height: 30)
 
-                _buildBetAndTakenRow(),
+                  _buildMySelfPlayedCardRowDesktop(),
 
-                //FanHandWidget(handCards: widget.clientManager.mySelfPlayer!.handCards, onPlayCard: (card) {}),
+                  Spacer(flex: 3), // Era SizedBox(height: 30)
 
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      //_buildBetAndTakenRow(),
-                      //_buildHandCardsBar(),
-                      HandCards(clientManager: widget.clientManager),
-                      //HandCardsBar(clientManager: widget.clientManager),
-                    ],
+
+
+                  // Diamo un flex anche all'Expanded della mano
+                  Expanded(
+                    flex: 15, // Dagli un peso maggiore per spingere in basso
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        HandCards(clientManager: widget.clientManager),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-      // Carte in basso
-      //bottomNavigationBar: _buildHandCardsBar(),
-    );
+          ],
+        ),
+      );
+    } else if (screenWidth >= tabletBreakpoint) {
+      // ... (Il tuo layout tablet) ...
+      return const Scaffold(
+        body: Text('Questo è il layout Tablet'),
+      );
+    } else {
+      // --- Layout per Mobile ---
+      // Applica LA STESSA LOGICA anche qui, altrimenti
+      // avrai lo stesso problema se il telefono è molto corto.
+      return Scaffold(
+        body: Stack(
+          children: [
+            _buildDropZone(),
+
+            SafeArea(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  // Usa Spacer invece di SizedBox
+                  Spacer(flex: 2), // Era SizedBox(height: 20)
+                  _buildPlayersRow(),
+                  Spacer(flex: 4), // Era SizedBox(height: 40)
+                  _buildTopCardRow(),
+                  Spacer(flex: 3), // Era SizedBox(height: 30)
+                  _buildMiddleRow(),
+                  Spacer(flex: 3), // Era SizedBox(height: 30)
+                  _buildMySelfPlayedCardRow(),
+                  Spacer(flex: 3), // Era SizedBox(height: 30)
+                  _buildBetAndTakenRow(),
+                  Expanded(
+                    flex: 15, // Dagli un peso maggiore
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        HandCards(clientManager: widget.clientManager),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildPlayersRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    // 1. Ottieni la larghezza dello schermo
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    // 2. Definisci lo spazio in base alla larghezza
+    // (Questi valori 600 e 16.0/8.0 sono solo esempi,
+    // modificali come preferisci)
+    final double spacing;
+    if (screenWidth > tabletBreakpoint) {
+      spacing = 100.0; // Spazio per schermi grandi (tablet/desktop)
+    } else {
+      spacing = 8.0; // Spazio per schermi piccoli (mobile)
+    }
+
+    // 3. Usa il widget Wrap con la spaziatura dinamica
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: spacing, // Applica lo spazio calcolato
+      runSpacing: 8.0, // Spazio verticale (se va a capo)
       children: game.players.isNotEmpty
           ? game.players.map((player) => PlayerWidget(
         name: player.getNickname(),
@@ -196,9 +280,38 @@ class _HomePageState extends State<HomePage> implements PageInterface {
     return mySelfPlayer?.playedCardNotifier.value != null
         ? Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [PlayedCardWidget(playedCardNotifier: mySelfPlayer!.playedCardNotifier)],
+      children: [
+        PlayedCardWidget(playedCardNotifier: mySelfPlayer!.playedCardNotifier),
+      ],
     )
-        : SizedBox.shrink();
+        : const SizedBox.shrink();
+  }
+
+  Widget _buildMySelfPlayedCardRowDesktop() {
+    final mySelfPlayer = widget.clientManager.mySelfPlayer;
+
+    // 1. Determina quale widget va al centro
+    final Widget centeredWidget = mySelfPlayer?.playedCardNotifier.value != null
+        ? PlayedCardWidget(playedCardNotifier: mySelfPlayer!.playedCardNotifier)
+        : SizedBox.shrink(); // Se non c'è carta, il centro è vuoto
+
+    // 2. Usa uno Stack per sovrapporre i layout
+    return Stack(
+      children: [
+        // Obiettivo 1: Il widget della carta, centrato
+        Center(
+          child: centeredWidget,
+        ),
+
+        // Obiettivo 2: Il widget Bet/Taken, allineato a sinistra
+        // (Alignment.centerLeft lo allinea a sinistra e al centro verticalmente,
+        // proprio come faceva la Row)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: _buildBetAndTakenRow(),
+        ),
+      ],
+    );
   }
 
   Widget _buildPlayerCard(int playerIndex) {
