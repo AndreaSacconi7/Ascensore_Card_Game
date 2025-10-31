@@ -1,6 +1,7 @@
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
+import '../ClientManager.dart';
 import '../model/CardGame.dart';
 
 class HandUpdate implements ExecutableInClient {
@@ -15,8 +16,8 @@ class HandUpdate implements ExecutableInClient {
             .toList();
 
   @override
-  void execute({required PageInterface page}) {
-    page.handleHandUpdate(this);
+  void execute({required ClientManager clientManager}) {
+    clientManager.handleHandUpdate(this);
   }
 
 

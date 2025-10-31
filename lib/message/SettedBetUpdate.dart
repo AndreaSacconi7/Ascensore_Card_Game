@@ -1,6 +1,8 @@
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
+import '../ClientManager.dart';
+
 class SettedBetUpdate implements ExecutableInClient {
 
   final int bet;
@@ -11,8 +13,8 @@ class SettedBetUpdate implements ExecutableInClient {
         nickname = json['executable']['nickname'] as String;
 
   @override
-  void execute({required PageInterface page}) {
-    page.handleSettedBet(this);
+  void execute({required ClientManager clientManager}) {
+    clientManager.handleSettedBet(this);
   }
 
 }

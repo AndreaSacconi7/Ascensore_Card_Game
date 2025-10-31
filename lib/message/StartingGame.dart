@@ -1,6 +1,8 @@
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
+import '../ClientManager.dart';
+
 class StartingGame implements ExecutableInClient {
 
   final List<String> connectedPlayers;
@@ -11,8 +13,8 @@ class StartingGame implements ExecutableInClient {
     connectedPlayers = List<String>.from(json['executable']['connectedPlayers'] as List);
 
   @override
-  void execute({required PageInterface page}) {
-    page.handleStartingGame(this);
+  void execute({required ClientManager clientManager}) {
+    clientManager.handleStartingGame(this);
   }
 
 }

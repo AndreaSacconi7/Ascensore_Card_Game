@@ -1,4 +1,4 @@
-import 'package:test_socket/ClientManager.dart';
+import 'package:test_socket/ClientManagerOld.dart';
 import 'package:test_socket/message/BriscolaUpdate.dart';
 import 'package:test_socket/message/EndRoundUpdate.dart';
 import 'package:test_socket/message/EndSetUpdate.dart';
@@ -10,6 +10,7 @@ import 'package:test_socket/message/SettedBetUpdate.dart';
 import 'package:test_socket/message/StartingGame.dart';
 import 'package:test_socket/message/TextMessage.dart';
 
+import '../ClientManager.dart';
 import '../message/LoginResponse.dart';
 
 abstract class PageInterface {

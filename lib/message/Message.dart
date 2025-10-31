@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
+import '../ClientManager.dart';
+import '../ClientManagerOld.dart';
 import 'MessageType.dart';
 
 class Message {
@@ -36,7 +38,7 @@ class Message {
     };
   }*/
 
-  Future<void> execute(PageInterface page) async {
-    executable.execute(page: page);
+  Future<void> execute(ClientManager clientManager) async {
+    executable.execute(clientManager: clientManager);
   }
 }

@@ -1,3 +1,4 @@
+import '../ClientManager.dart';
 import '../pages/PageInterface.dart';
 import 'ExecutableInClient.dart';
 
@@ -12,7 +13,7 @@ class TextMessage implements ExecutableInClient {
 
 
   @override
-  void execute({required PageInterface page}) {
-    page.handleTextMessage(this);
+  void execute({required ClientManager clientManager}) {
+    clientManager.handleTextMessage(this);
   }
 }

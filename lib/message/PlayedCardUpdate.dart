@@ -1,3 +1,4 @@
+import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
 
 import '../model/CardGame.dart';
@@ -20,8 +21,8 @@ class PlayedCardUpdate implements ExecutableInClient {
   }
 
   @override
-  void execute({required PageInterface page}) {
-    page.handlePlayedCard(this);
+  void execute({required ClientManager clientManager}) {
+    clientManager.handlePlayedCard(this);
   }
 
 }

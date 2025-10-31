@@ -1,5 +1,6 @@
 enum CommandType {
   LOGIN_COMMAND,
+  PLAYER_INFO_REQUEST,
   PING_COMMAND,
   PUT_CARD,
   SET_BET,

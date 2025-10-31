@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// Un bottone personalizzato per il menu, basato sul tuo stile.
 class MenuButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isPrimary; // Per lo stile (primario o secondario)
   final IconData? icon; // Icona opzionale
 

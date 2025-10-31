@@ -1,9 +1,10 @@
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
+import '../ClientManager.dart';
 import '../model/CardGame.dart';
 
-class BriscolaUpdate implements  ExecutableInClient {
+class BriscolaUpdate implements ExecutableInClient {
 
   final CardGame briscolaCard;
 
@@ -18,8 +19,8 @@ class BriscolaUpdate implements  ExecutableInClient {
 
 
   @override
-  void execute({required PageInterface page}) {
-    page.handleBriscolaUpdate(this);
+  void execute({required ClientManager clientManager}) {
+    clientManager.handleBriscolaUpdate(this);
   }
 
 

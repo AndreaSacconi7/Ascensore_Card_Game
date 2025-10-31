@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:test_socket/ClientManager.dart';
 import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
@@ -22,8 +23,8 @@ class LoginResponse implements ExecutableInClient {
 
 
   @override
-  void execute({required PageInterface page}) {
-      page.handleLoginResponse(this);
+  void execute({required ClientManager clientManager}) {
+      clientManager.handleLoginResponse(this);
   }
 
 

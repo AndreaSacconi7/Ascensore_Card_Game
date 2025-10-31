@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test_socket/ClientManager.dart';
+import 'package:test_socket/ClientManagerOld.dart';
 import 'package:test_socket/command/Command.dart';
 import 'package:test_socket/message/BriscolaUpdate.dart';
 import 'package:test_socket/message/EndRoundUpdate.dart';
@@ -20,6 +20,7 @@ import 'package:test_socket/widgets/ScoreWidget.dart';
 import 'package:test_socket/widgets/TakenWidget.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../ClientManager.dart';
 import '../command/CommandType.dart';
 import '../command/PutCard.dart';
 import '../command/SetBet.dart';
@@ -59,7 +60,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
   @override
   void initState() {
     super.initState();
-    widget.clientManager.setCurrentPage(this);
+    //widget.clientManager.setCurrentPage(this);
 
     //TODO: popolo home con contenuti di test
     game.players.add(widget.clientManager.mySelfPlayer!);
@@ -166,7 +167,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        HandCards(clientManager: widget.clientManager),
+                        HandCards(),
                       ],
                     ),
                   ),
@@ -210,7 +211,7 @@ class _HomePageState extends State<HomePage> implements PageInterface {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        HandCards(clientManager: widget.clientManager),
+                        HandCards(),
                       ],
                     ),
                   ),

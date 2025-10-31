@@ -2,6 +2,8 @@ import 'package:test_socket/message/ExecutableInClient.dart';
 import 'package:test_socket/model/PlayerState.dart';
 import 'package:test_socket/pages/PageInterface.dart';
 
+import '../ClientManager.dart';
+
 class PlayerStateUpdate implements ExecutableInClient {
 
   final PlayerState playerState;
@@ -15,7 +17,7 @@ class PlayerStateUpdate implements ExecutableInClient {
         nickname = json['executable']['nickname'] as String;
 
   @override
-  void execute({required PageInterface page}) {
-    page.handlePlayerStateUpdate(this);
+  void execute({required ClientManager clientManager}) {
+    clientManager.handlePlayerStateUpdate(this);
   }
 }

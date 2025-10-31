@@ -1,3 +1,4 @@
+import '../ClientManager.dart';
 import '../pages/PageInterface.dart';
 import 'ExecutableInClient.dart';
 
@@ -15,8 +16,8 @@ class EndSetUpdate implements ExecutableInClient {
         nextSetNumber = json['executable']['nextSetNumber'] as int;
 
   @override
-  void execute({required PageInterface page}) {
+  void execute({required ClientManager clientManager}) {
 
-    page.handleEndSetUpdate(this);
+    clientManager.handleEndSetUpdate(this);
   }
 }
