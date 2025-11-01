@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:test_socket/pages/LoginPage.dart';
 import 'package:test_socket/pages/MainMenuScreen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'AppWrapper.dart';
 import 'ClientManager.dart';
 import 'pages/LoginPageOld.dart';
 
@@ -42,7 +43,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       //home: LoginPage(clientManager: clientManager),
-      home: LoginPage(),
+      home: AppWrapper(),
     );
   }
 }

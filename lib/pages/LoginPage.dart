@@ -13,7 +13,7 @@ import '../command/LoginRequest.dart';
 import '../model/MySelfPlayer.dart';
 import '../widgets/MenuButton2.0.dart';
 import '../widgets/ModernTextField.dart';
-import 'HomePage.dart';
+import 'HomePageOld.dart';
 import 'MainMenuScreen.dart';
 
 class LoginPage extends StatefulWidget {
@@ -74,7 +74,7 @@ class _LoginPageState extends State<LoginPage> {
         // --- GESTIONE DEGLI EFFETTI COLLATERALI ---
 
         // EFFETTO 1: Login Riuscito -> Naviga
-        if (manager.authState == AuthState.authenticated) {
+        /*if (manager.authState == AuthState.authenticated) {
           // Usiamo 'addPostFrameCallback' per navigare *dopo*
           // che il 'build' è completato, per evitare errori.
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -91,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
           });
           // Mostra uno spinner mentre prepari la navigazione
           return _buildLoadingScaffold();
-        }
+        }*/
 
         // EFFETTO 2: Errore -> Mostra SnackBar
         if (manager.authError != null) {

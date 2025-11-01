@@ -23,7 +23,7 @@ import '../command/Command.dart';
 import '../command/CommandType.dart';
 import '../command/LoginRequest.dart';
 import '../message/Message.dart';
-import 'HomePage.dart';
+import 'HomePageOld.dart';
 import '../message/LoginResponse.dart';
 
 class LoginPageOld extends StatefulWidget {

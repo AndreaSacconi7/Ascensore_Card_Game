@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:test_socket/AppScreenState.dart';
 import 'package:test_socket/model/CardGame.dart';
-import 'package:test_socket/pages/HomePage.dart';
+import 'package:test_socket/pages/HomePageOld.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 import 'dart:async';
@@ -25,6 +26,7 @@ import 'message/StartingGame.dart';
 import 'message/TextMessage.dart';
 import 'model/Game.dart';
 import 'model/MySelfPlayer.dart';
+import 'model/Player.dart';
 
 // 1. Rendi il ClientManager un ChangeNotifier
 class ClientManager extends ChangeNotifier {
@@ -44,6 +46,7 @@ class ClientManager extends ChangeNotifier {
   bool isAuthenticated = false;
   AuthState authState = AuthState.unknown;
   String? authError;
+  AppScreenState currentScreen = AppScreenState.login;
 
   ClientManager(WebSocketChannel channel) {
     this.channel = channel;
@@ -52,6 +55,11 @@ class ClientManager extends ChangeNotifier {
     // 4. Ascolto diretto. Il flusso dei messaggi è la nostra "coda".
     _stream.listen(_handleMessage);
     // _startProcessing(); // Non più necessario
+  }
+
+  void setCurrentScreen(AppScreenState newScreen) {
+    currentScreen = newScreen;
+    notifyListeners();
   }
 
   // Il getter per mySelfPlayer (lo avevi già)
@@ -122,6 +130,8 @@ class ClientManager extends ChangeNotifier {
     // 3. Imposta lo stato su "non autenticato"
     authState = AuthState.unauthenticated;
 
+    currentScreen = AppScreenState.login;
+
     // 4. Notifica tutti i widget in ascolto (che causerà
     //    il ritorno alla LoginPage)
     notifyListeners();
@@ -155,11 +165,13 @@ class ClientManager extends ChangeNotifier {
       // Per ora, simuliamo un successo immediato
       isAuthenticated = true;
       authState = AuthState.authenticated;
+      currentScreen = AppScreenState.mainMenu;
 
     } else {
       // Nessun token, mostra la pagina di login
       isAuthenticated = false;
       authState = AuthState.unauthenticated;
+      currentScreen = AppScreenState.login;
     }
     notifyListeners();
   }
@@ -199,6 +211,7 @@ class ClientManager extends ChangeNotifier {
     if (username.isEmpty) {
       authState = AuthState.error;
       authError = "Per favore, inserisci uno username";
+      currentScreen = AppScreenState.login;
       notifyListeners();
       return;
     }
@@ -257,6 +270,8 @@ class ClientManager extends ChangeNotifier {
 
       isAuthenticated = true;
       authState = AuthState.authenticated;
+      currentScreen = AppScreenState.mainMenu;
+
       mySelfPlayer = MySelfPlayer(response.nickname);
 
       _storage.write(key: 'auth_token', value: token);
@@ -294,11 +309,33 @@ class ClientManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  void handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {}
+  void handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {
+    // Aggiorna lo stato del giocatore nel gioco
+    for (var player in game!.players) {
+      if (player.getNickname() == playerStateUpdate.nickname) {
+        player.setPlayerState(playerStateUpdate.playerState);
+        break;
+      }
+    }
+
+    // Notifica la UI
+    notifyListeners();
+  }
 
   void handleSettedBet(SettedBetUpdate settedBetUpdate) {}
 
-  void handleStartingGame(StartingGame startingGame) {}
+  void handleStartingGame(StartingGame startingGame) {
+
+    game = Game();
+    //aggiungo connceted players alla lista dei giocatori nel game
+    for(var nickname in startingGame.connectedPlayers){
+      game!.players.add(Player(nickname));
+    }
+    //faccio navigare la UI alla HomePage
+    currentScreen = AppScreenState.inGame;
+
+    notifyListeners();
+  }
 
   void handleTextMessage(TextMessage textMessage) {}
 
