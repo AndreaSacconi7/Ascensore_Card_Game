@@ -1,10 +1,10 @@
 import 'package:test_socket/command/ExecutableInServer.dart';
 
-class AddPlayerToGame implements ExecutableInServer {
+class JoinGameRequest implements ExecutableInServer {
 
   final String nickname;
 
-  AddPlayerToGame({
+  JoinGameRequest({
     required this.nickname,
   });
 

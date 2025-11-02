@@ -16,7 +16,7 @@ import 'package:test_socket/pages/PageInterface.dart';
 import '../AppScreenState.dart';
 import '../ClientManager.dart';
 import '../ClientManagerOld.dart';
-import '../command/AddPlayerToGame.dart';
+import '../command/JoinGameRequest.dart';
 import '../command/Command.dart';
 import '../command/CommandType.dart';
 import '../widgets/MenuButton.dart';
@@ -97,9 +97,9 @@ class MainMenuScreen extends StatelessWidget {
                             final manager = Provider.of<ClientManager>(context, listen: false);
 
                             // 2b. Crea il comando (logica che prima era in _sendCommand)
-                            AddPlayerToGame executable = AddPlayerToGame(nickname: manager.mySelfPlayer!.nickname);
+                            JoinGameRequest executable = JoinGameRequest(nickname: manager.mySelfPlayer!.nickname);
                             Command command = Command(
-                              commandType: CommandType.ADD_PLAYER_TO_GAME, // Esempio
+                              commandType: CommandType.JOIN_GAME_REQUEST, // Esempio
                               executable: executable,
                             );
 

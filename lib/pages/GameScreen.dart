@@ -70,6 +70,10 @@ class _GameScreenState extends State<GameScreen> {
   /// Questa funzione viene chiamata OGNI VOLTA che
   /// il ClientManager chiama notifyListeners()
   void _handleClientChanges() {
+    print("_handleClientChanges called in GameScreen");
+    print("Previous State: $_previousPlayerState");
+    print("Current State: ${_clientManager?.mySelfPlayer?.playerState}");
+
     if (!mounted) return; // Non fare nulla se la pagina è stata distrutta
 
     final mySelfPlayer = _clientManager?.mySelfPlayer;
@@ -215,19 +219,21 @@ class _GameScreenState extends State<GameScreen> {
       spacing: spacing,
       runSpacing: 8.0,
       children: game.players.isNotEmpty
-          ? game.players.map((player) => PlayerWidget(
-        name: player.getNickname(),
-        avatarUrl: "default_avatar_url",
-        player: player,
-      ))
-          .toList()
+          ? game.players
+                .where((player) => player.getNickname() != manager.mySelfPlayer!.nickname)
+                .map((player) => PlayerWidget(
+                    name: player.getNickname(),
+                    avatarUrl: "default_avatar_url",
+                    player: player,
+                  ))
+                .toList()
           : [Text('No players available yet')],
     );
   }
 
   Widget _buildTopCardRow(BuildContext context, ClientManager manager, Game game) {
     final topPlayer = game.players.isNotEmpty ? game.players[0] : null;
-    return topPlayer?.playedCardNotifier.value != null
+    return topPlayer?.playedCardNotifier.value != null && topPlayer?.nickname != manager.mySelfPlayer!.nickname
         ? Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [PlayedCardWidget(playedCardNotifier: topPlayer!.playedCardNotifier)],
@@ -279,7 +285,7 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildPlayerCard(BuildContext context, ClientManager manager, Game game, int playerIndex) {
     final player = game.players.length > playerIndex ? game.players[playerIndex] : null;
-    return player?.playedCardNotifier.value != null
+    return player?.playedCardNotifier.value != null && player?.nickname != manager.mySelfPlayer!.nickname
         ? PlayedCardWidget(playedCardNotifier: player!.playedCardNotifier)
         : SizedBox.shrink();
   }
@@ -366,8 +372,8 @@ class _GameScreenState extends State<GameScreen> {
 
           if (_isValidPutCard(context, manager, game, droppedCard!)) {
             // NON modificare lo stato locale
-            // manager.mySelfPlayer?.removeCardFromHand(droppedCard!);
-            // manager.mySelfPlayer?.setPlayedCard(droppedCard!);
+            //manager.mySelfPlayer?.removeCardFromHand(droppedCard!);
+            //manager.mySelfPlayer?.setPlayedCard(droppedCard!);
 
             // INVIA SOLO IL COMANDO
             PutCard putCardExecutable = PutCard(

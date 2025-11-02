@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_socket/AppScreenState.dart';
+import 'package:test_socket/message/JoinGameResponse.dart';
 import 'package:test_socket/model/CardGame.dart';
+import 'package:test_socket/model/Seed.dart';
 import 'package:test_socket/pages/HomePageOld.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
@@ -27,6 +29,7 @@ import 'message/TextMessage.dart';
 import 'model/Game.dart';
 import 'model/MySelfPlayer.dart';
 import 'model/Player.dart';
+import 'model/PlayerState.dart';
 
 // 1. Rendi il ClientManager un ChangeNotifier
 class ClientManager extends ChangeNotifier {
@@ -47,6 +50,7 @@ class ClientManager extends ChangeNotifier {
   AuthState authState = AuthState.unknown;
   String? authError;
   AppScreenState currentScreen = AppScreenState.login;
+  bool calculatingScores = false;
 
   ClientManager(WebSocketChannel channel) {
     this.channel = channel;
@@ -83,6 +87,10 @@ class ClientManager extends ChangeNotifier {
 
     if(stringMessageType == 'LOGIN_RESPONSE') {
       executable = LoginResponse.fromJson(jsonMap);
+    }else if(stringMessageType == 'PLAYER_INFO_RESPONSE') {
+      executable = PlayerInfoResponse.fromJson(jsonMap);
+    }else if(stringMessageType == 'JOIN_GAME_RESPONSE'){
+      executable = JoinGameResponse.fromJson(jsonMap);
     }else if(stringMessageType == 'HAND_UPDATE') {
       executable = HandUpdate.fromJson(jsonMap);
     }else if(stringMessageType == 'BRISCOLA_UPDATE') {
@@ -237,11 +245,14 @@ class ClientManager extends ChangeNotifier {
     for(var p in game!.players){
       if(p.getNickname() == playedCardUpdate.nickname){
         p.setPlayedCard(playedCardUpdate.playedCard);
+
+        if(playedCardUpdate.nickname == mySelfPlayer!.getNickname()){
+          //rimuovo la carta giocata dalla mano del giocatore
+          mySelfPlayer!.removeCardFromHand(playedCardUpdate.playedCard);
+        }
         break;
       }
     }
-    // 4. "Grida nel megafono" per avvisare la UI!
-    notifyListeners();
   }
 
   /// Pulisce eventuali messaggi di errore
@@ -250,13 +261,81 @@ class ClientManager extends ChangeNotifier {
     authState = AuthState.unauthenticated;
   }
 
-  void handleBriscolaUpdate(BriscolaUpdate briscolaUpdate) {}
+  void handleBriscolaUpdate(BriscolaUpdate briscolaUpdate) {
 
-  void handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {}
+    game?.setBriscola(briscolaUpdate.briscolaCard);
+  }
 
-  void handleEndSetUpdate(EndSetUpdate endSetUpdate) {}
+  void handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {
 
-  void handleHandUpdate(HandUpdate handUpdate) {}
+    List<Player> newPlayerOrder = [];
+    for(String nickname in endRoundUpdate.nextPlayerOrderAndTaken.keys){
+      for(Player p in game!.players){
+        if(p.getNickname() == nickname){
+          p.setRoundsWon(endRoundUpdate.nextPlayerOrderAndTaken[nickname]!);
+          newPlayerOrder.add(p);
+          break;
+        }
+      }
+    }
+
+    game!.setPlayerOrder(newPlayerOrder);
+
+    game!.setSet(endRoundUpdate.nextRoundNumber);
+
+    Future.delayed(const Duration(seconds: 3), () {
+      // Dopo 3 secondi, chiama il metodo di pulizia
+      _clearBoardForNextRound();
+    });
+  }
+
+  void handleEndSetUpdate(EndSetUpdate endSetUpdate) {
+
+    List<Player> newPlayerOrder = [];
+
+    for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
+      for(Player p in game!.players){
+        if(p.getNickname() == nickname){
+          p.setScore(endSetUpdate.nextPlayerOrderAndScore[nickname]!);
+          newPlayerOrder.add(p);
+          break;
+        }
+      }
+    }
+
+    game!.setPlayerOrder(newPlayerOrder);
+
+    game!.setSet(endSetUpdate.nextSetNumber);
+
+    calculatingScores = true;
+
+    Future.delayed(const Duration(seconds: 3), () {
+      // Dopo 3 secondi, chiama il metodo di pulizia
+      _clearBoardForNextSet();
+      calculatingScores = false;
+    });
+  }
+
+  void _clearBoardForNextRound(){
+    for(var p in game!.players){
+      p.setPlayedCard(new CardGame(Seed.VOID, 0));
+    }
+    notifyListeners();
+  }
+
+  void _clearBoardForNextSet(){
+    for(var p in game!.players){
+      p.setPlayedCard(new CardGame(Seed.VOID, 0));
+      p.setRoundsWon(0);
+      p.setBet(0);
+    }
+    notifyListeners();
+  }
+
+  void handleHandUpdate(HandUpdate handUpdate) {
+
+    mySelfPlayer?.setHandCards(handUpdate.handCards);
+  }
 
   void handleLoginResponse(LoginResponse response){
     //debug
@@ -286,7 +365,6 @@ class ClientManager extends ChangeNotifier {
       authError = "Login fallito. Prova un altro nome."; // Esempio
     }
 
-    notifyListeners();
   }
 
   // NUOVO METODO PER RICHIEDERE I DATI DEL GIOCATORE
@@ -306,35 +384,78 @@ class ClientManager extends ChangeNotifier {
   void handlePlayerInfo(PlayerInfoResponse playerInfoResponse) {
 
     mySelfPlayer = MySelfPlayer(playerInfoResponse.nickname);
-    notifyListeners();
+  }
+
+  void handleJoinGameResponse(JoinGameResponse joinGameResponse) {
+    if (joinGameResponse.isJoined == true) {
+      print('${joinGameResponse.nickname} si è unito al gioco con successo.');
+      // Puoi aggiornare lo stato del gioco qui se necessario
+    } else {
+      print('Unione al gioco fallita per ${joinGameResponse.nickname}.');
+      // Gestisci l'errore di unione al gioco
+    }
+
   }
 
   void handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {
+    if(calculatingScores){
+      //ritardo l'aggiornamento dello stato del giocatore di 3 secondi
+      Future.delayed(const Duration(seconds: 3), () {
+        _updatePlayerState(playerStateUpdate);
+      });
+    }else{
+      //aggiorno subito lo stato del giocatore
+      _updatePlayerState(playerStateUpdate);
+    }
+  }
+
+  void _updatePlayerState(PlayerStateUpdate playerStateUpdate){
     // Aggiorna lo stato del giocatore nel gioco
     for (var player in game!.players) {
       if (player.getNickname() == playerStateUpdate.nickname) {
         player.setPlayerState(playerStateUpdate.playerState);
+        print("Aggiornato stato di ${player.getNickname()} a ${playerStateUpdate.playerState}");
         break;
       }
     }
-
-    // Notifica la UI
     notifyListeners();
   }
 
-  void handleSettedBet(SettedBetUpdate settedBetUpdate) {}
+  void handleSettedBet(SettedBetUpdate settedBetUpdate) {
+
+    for(var p in game!.players){
+      if(p.getNickname() == settedBetUpdate.nickname){
+        p.setBet(settedBetUpdate.bet);
+        break;
+      }
+    }
+  }
 
   void handleStartingGame(StartingGame startingGame) {
 
     game = Game();
-    //aggiungo connceted players alla lista dei giocatori nel game
-    for(var nickname in startingGame.connectedPlayers){
-      game!.players.add(Player(nickname));
+    //aggiungo altri player alla lista di giocatori nel game
+    for(var playerNick in startingGame.connectedPlayers){
+      var finded = false;
+      for(var p in game!.players){
+        if(p.getNickname() == playerNick){
+          finded = true;
+          break;
+        }
+      }
+      if(!finded){
+        if(playerNick != mySelfPlayer!.getNickname()) {
+          game!.addPlayer(Player(playerNick));
+        } else {
+          game!.addPlayer(mySelfPlayer!);
+        }
+      }
     }
+    //players inviati dal server sono già in ordine di turno
+    game!.setPlayerOrder(game!.players);
+
     //faccio navigare la UI alla HomePage
     currentScreen = AppScreenState.inGame;
-
-    notifyListeners();
   }
 
   void handleTextMessage(TextMessage textMessage) {}
