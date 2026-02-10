@@ -231,8 +231,17 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  // Restituisce una lista di giocatori escludendo "me stesso"
+  List<Player> _getOpponents(ClientManager manager, Game game) {
+    return game.players
+        .where((p) => p.nickname != manager.mySelfPlayer!.nickname)
+        .toList();
+  }
+
   Widget _buildTopCardRow(BuildContext context, ClientManager manager, Game game) {
-    final topPlayer = game.players.isNotEmpty ? game.players[0] : null;
+    final opponents = _getOpponents(manager, game);
+    final topPlayer = opponents.isNotEmpty ? opponents[0] : null;
+
     return topPlayer?.playedCardNotifier.value != null && topPlayer?.nickname != manager.mySelfPlayer!.nickname
         ? Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +293,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Widget _buildPlayerCard(BuildContext context, ClientManager manager, Game game, int playerIndex) {
-    final player = game.players.length > playerIndex ? game.players[playerIndex] : null;
+    final opponents = _getOpponents(manager, game);
+
+    final player = opponents.length > playerIndex ? opponents[playerIndex] : null;
     return player?.playedCardNotifier.value != null && player?.nickname != manager.mySelfPlayer!.nickname
         ? PlayedCardWidget(playedCardNotifier: player!.playedCardNotifier)
         : SizedBox.shrink();
