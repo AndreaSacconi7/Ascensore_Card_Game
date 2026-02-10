@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:test_socket/model/PlayerState.dart';
+import 'package:test_socket/model/SetResultAnimationState.dart';
 
 import '../ClientManager.dart';
 import '../command/Command.dart';
@@ -17,6 +18,7 @@ import '../widgets/HandCards.dart';
 import '../widgets/MySelfTakenBetScore.dart';
 import '../widgets/PlayedCardWidget.dart';
 import '../widgets/PlayerWidget.dart';
+import '../widgets/SetResultAnimation.dart';
 
 class GameScreen extends StatefulWidget {
   // NON riceve più ClientManager
@@ -40,6 +42,8 @@ class _GameScreenState extends State<GameScreen> {
   // --- LOGICA NUOVA: Listener per reagire ai cambi di stato ---
   ClientManager? _clientManager; // Riferimento al manager
   PlayerState? _previousPlayerState; // Stato precedente per confronto
+
+  SetResultAnimationState _uiAnimationState = SetResultAnimationState.none;
 
   @override
   void didChangeDependencies() {
@@ -102,6 +106,27 @@ class _GameScreenState extends State<GameScreen> {
 
     // Aggiorna lo stato precedente per il prossimo controllo
     _previousPlayerState = currentState;
+
+    // Leggiamo lo stato dal manager
+    final resultFromManager = _clientManager?.lastSetResult;
+
+    // Se il manager ci dice che c'è un risultato (Win o Loss)
+    // E noi non stiamo già mostrando quell'animazione...
+    if (resultFromManager != SetResultAnimationState.none &&
+        resultFromManager != _uiAnimationState) {
+
+      setState(() {
+        _uiAnimationState = resultFromManager!;
+      });
+    }
+
+    // Se il manager ha resettato a 'none' (dopo i 3 secondi), resettiamo anche noi
+    if (resultFromManager == SetResultAnimationState.none &&
+        _uiAnimationState != SetResultAnimationState.none) {
+      setState(() {
+        _uiAnimationState = SetResultAnimationState.none;
+      });
+    }
   }
 
   @override
@@ -200,6 +225,21 @@ class _GameScreenState extends State<GameScreen> {
                     ],
                   ),
                 ),
+                // WIDGET ANIMAZIONE
+                if (_uiAnimationState != SetResultAnimationState.none)
+                  Positioned.fill(
+                    child: Center(
+                      child: SetResultAnimation(
+                        // Passiamo true se è WIN, false se è LOSS
+                        isWin: _uiAnimationState == SetResultAnimationState.win,
+                        onComplete: () {
+                          // Opzionale: puoi forzare il reset locale qui se vuoi
+                          // che sparisca prima dei 3 secondi del server
+                          // setState(() { _uiAnimationState = RoundResultEvent.none; });
+                        },
+                      ),
+                    ),
+                  ),
               ],
             ),
           );

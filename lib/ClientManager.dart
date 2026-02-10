@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:test_socket/AppScreenState.dart';
 import 'package:test_socket/message/JoinGameResponse.dart';
 import 'package:test_socket/model/CardGame.dart';
+import 'package:test_socket/model/SetResultAnimationState.dart';
 import 'package:test_socket/model/Seed.dart';
 import 'package:test_socket/pages/HomePageOld.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -51,6 +52,8 @@ class ClientManager extends ChangeNotifier {
   String? authError;
   AppScreenState currentScreen = AppScreenState.login;
   bool calculatingScores = false;
+
+  SetResultAnimationState lastSetResult = SetResultAnimationState.none;
 
   ClientManager(WebSocketChannel channel) {
     this.channel = channel;
@@ -296,6 +299,18 @@ class ClientManager extends ChangeNotifier {
     for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
       for(Player p in game!.players){
         if(p.getNickname() == nickname){
+          if(p.getNickname() == mySelfPlayer!.getNickname()){
+            int oldScore = mySelfPlayer!.getScore();
+            int newScore = endSetUpdate.nextPlayerOrderAndScore[nickname]!;
+
+            // Se il punteggio è aumentato, ho vinto io
+            if (newScore > oldScore) {
+              lastSetResult = SetResultAnimationState.win;
+            } else {
+              // Se il punteggio è uguale, ha vinto qualcun altro
+              lastSetResult = SetResultAnimationState.loss;
+            }
+          }
           p.setScore(endSetUpdate.nextPlayerOrderAndScore[nickname]!);
           newPlayerOrder.add(p);
           break;
@@ -313,6 +328,8 @@ class ClientManager extends ChangeNotifier {
       // Dopo 3 secondi, chiama il metodo di pulizia
       _clearBoardForNextSet();
       calculatingScores = false;
+      //resetto il risultato dell'ultimo set
+      lastSetResult = SetResultAnimationState.none;
     });
   }
 
