@@ -1,4 +1,4 @@
-enum AuthState {
+enum AuthenticationState {
   unknown, // Stato iniziale
   loading, // Sta controllando il token o attendendo il server
   authenticated, // Login riuscito

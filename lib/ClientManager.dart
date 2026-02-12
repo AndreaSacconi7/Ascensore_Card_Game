@@ -1,16 +1,18 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:test_socket/AppScreenState.dart';
 import 'package:test_socket/message/JoinGameResponse.dart';
 import 'package:test_socket/model/CardGame.dart';
 import 'package:test_socket/model/SetResultAnimationState.dart';
 import 'package:test_socket/model/Seed.dart';
-import 'package:test_socket/pages/HomePageOld.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 import 'dart:async';
 
-import 'AuthState.dart';
+import 'AuthenticationState.dart';
 import 'command/Command.dart';
 import 'command/CommandType.dart';
 import 'command/LoginRequest.dart';
@@ -30,7 +32,6 @@ import 'message/TextMessage.dart';
 import 'model/Game.dart';
 import 'model/MySelfPlayer.dart';
 import 'model/Player.dart';
-import 'model/PlayerState.dart';
 
 // 1. Rendi il ClientManager un ChangeNotifier
 class ClientManager extends ChangeNotifier {
@@ -48,7 +49,7 @@ class ClientManager extends ChangeNotifier {
   MySelfPlayer? mySelfPlayer;
   Game? game;
   bool isAuthenticated = false;
-  AuthState authState = AuthState.unknown;
+  AuthenticationState authState = AuthenticationState.unknown;
   String? authError;
   AppScreenState currentScreen = AppScreenState.login;
   bool calculatingScores = false;
@@ -75,7 +76,8 @@ class ClientManager extends ChangeNotifier {
   }
 
   void sendCommand(dynamic jsonCommand) {
-    print('Sending command to server: $jsonCommand');
+    log('Sending command to server: $jsonCommand');
+
     channel.sink.add(jsonCommand);
   }
 
@@ -128,68 +130,65 @@ class ClientManager extends ChangeNotifier {
   }
 
 
-  /// Esegue il logout dell'utente
-  Future<void> logout() async {
-    // 1. Cancella il token salvato
-    await _storage.delete(key: 'auth_token');
+  // Dentro ClientManager.dart
+  Future<void> logOut() async {
+    // 1. Dillo a Supabase (cancella il token locale)
+    await Supabase.instance.client.auth.signOut();
 
-    // 2. Resetta lo stato interno del manager
+    // 2. Chiudi la connessione col server Java (importante!)
+    // socketService.disconnect();
+
+    // 3. Aggiorna lo stato della UI
+    authState = AuthenticationState.unauthenticated;
+    authError = null;
     isAuthenticated = false;
-    mySelfPlayer = null;
-    game = null; // Resetta anche il gioco, se esiste
-
-    // 3. Imposta lo stato su "non autenticato"
-    authState = AuthState.unauthenticated;
-
     currentScreen = AppScreenState.login;
-
-    // 4. Notifica tutti i widget in ascolto (che causerà
-    //    il ritorno alla LoginPage)
     notifyListeners();
 
-    print("Logout eseguito, token cancellato.");
+    print("Logout effettuato. Token cancellato.");
   }
 
   // --- AZIONI CHIAMATE DALLA UI ---
   /// Controlla se un token è già salvato all'avvio dell'app
   Future<void> checkLoginStatus() async {
-    //TODO: rimuoverlo poi perche serve solo per debug
-    await _storage.delete(key: 'auth_token');
-    print("Token cancellato per debug");
 
-    authState = AuthState.loading;
+    // 1. RIMUOVI LA CANCELLAZIONE DEBUG!
+    // Se lasci questo, l'utente dovrà fare login ogni volta che apre l'app!
+    // await _storage.delete(key: 'auth_token');
+
+    authState = AuthenticationState.loading;
     notifyListeners();
 
-    final token = await _storage.read(key: 'auth_token');
+    // 2. Chiedi a Supabase: "Abbiamo una sessione valida salvata?"
+    final session = Supabase.instance.client.auth.currentSession;
 
-    print("Controllo token salvato: $token");
+    if (session != null) {
+      // Trovato! Supabase ha gestito il refresh se necessario.
+      String validToken = session.accessToken;
+      print("Sessione Supabase trovata. Token: ${validToken.substring(0, 10)}...");
 
-    if (token != null && token.isNotEmpty) {
-      // Token trovato! In un'app reale, dovresti validarlo col server.
-      // Per ora, assumiamo sia valido.
+      // 3. Autenticazione col Backend (WebSocket)
+      // Qui inviamo il comando che il tuo backend Java si aspetta
+      _fetchPlayerInfoWithExistingToken(validToken);
 
-      print("Token valido trovato, autenticazione in corso...");
-      // TODO: Invia il token al server per l'autenticazione automatica
-      // String authMessage = jsonEncode({"event": "authenticate", "token": token});
-      // channel.sink.add(authMessage);
-
-      // Per ora, simuliamo un successo immediato
       isAuthenticated = true;
-      authState = AuthState.authenticated;
+      authState = AuthenticationState.authenticated;
       currentScreen = AppScreenState.mainMenu;
 
     } else {
-      // Nessun token, mostra la pagina di login
+      // Nessuna sessione salvata, l'utente deve fare il login manuale
+      print("Nessuna sessione trovata.");
       isAuthenticated = false;
-      authState = AuthState.unauthenticated;
+      authState = AuthenticationState.unauthenticated;
       currentScreen = AppScreenState.login;
     }
+
     notifyListeners();
   }
 
   /// Avvia il login con Apple
   void loginWithApple() {
-    authState = AuthState.loading;
+    authState = AuthenticationState.loading;
     notifyListeners();
 
     // TODO: Inserisci la logica dell'SDK 'sign_in_with_apple'
@@ -201,7 +200,7 @@ class ClientManager extends ChangeNotifier {
 
   /// Avvia il login con Google
   void loginWithGoogle() {
-    authState = AuthState.loading;
+    authState = AuthenticationState.loading;
     notifyListeners();
 
     // TODO: Inserisci la logica dell'SDK di Google
@@ -220,24 +219,93 @@ class ClientManager extends ChangeNotifier {
   /// Avvia il login come ospite
   void loginAsGuest(String username) {
     if (username.isEmpty) {
-      authState = AuthState.error;
+      authState = AuthenticationState.error;
       authError = "Per favore, inserisci uno username";
       currentScreen = AppScreenState.login;
       notifyListeners();
       return;
     }
 
-    authState = AuthState.loading;
+    authState = AuthenticationState.loading;
     notifyListeners();
 
     // --- Invio del comando al server ---
     final password = "guest_password"; // Fittizia
 
+    //TODO: modificare questo command e inviare invece un fetchPlayerInfo con nickname voluto. però gestire risposta che deve sostiuire quella che ora è la risposta del login in caso il nickname non vada bene
     LoginRequest loginRequest = LoginRequest(username: username, password: password);
     Command command = Command(
       commandType: CommandType.LOGIN_COMMAND,
       executable: loginRequest,
       nickName: username,
+    );
+
+    sendCommand(command.toJson());
+  }
+
+  //NEW LOGIN METHOD:
+  Future<void> loginWithEmail(String email, String password) async {
+    authState = AuthenticationState.loading;
+    notifyListeners();
+    try {
+      final res = await Supabase.instance.client.auth.signInWithPassword(
+          email: email,
+          password: password
+      );
+      if (res.session != null) {
+        _fetchPlayerInfoFirstTime(res.session!.accessToken, email);
+      }
+    } catch (e) {
+      authError = "Login fallito: ${e.toString()}";
+      authState = AuthenticationState.error;
+      notifyListeners();
+    }
+  }
+
+  Future<void> signUpWithEmail(String email, String password) async {
+    authState = AuthenticationState.loading;
+    notifyListeners();
+    try {
+      final res = await Supabase.instance.client.auth.signUp(
+          email: email,
+          password: password
+      );
+      // Nota: Supabase di default richiede conferma email.
+      // Se disattivata, fa login automatico.
+      if (res.session != null) {
+        _fetchPlayerInfoWithExistingToken(res.session!.accessToken);
+      } else {
+        //NON ATTIVA QUESTA COSA
+        authError = "Controlla la tua email per confermare l'iscrizione!";
+        authState = AuthenticationState.error; // O uno stato 'waiting_confirmation'
+        notifyListeners();
+      }
+    } catch (e) {
+      authError = "Registrazione fallita: ${e.toString()}";
+      authState = AuthenticationState.error;
+      notifyListeners();
+    }
+  }
+
+  void _fetchPlayerInfoFirstTime(String token, String nickname){
+
+    PlayerInfoRequest playerInfoRequest = PlayerInfoRequest(token: token, nickname: nickname);
+    Command command = Command(
+      commandType: CommandType.PLAYER_INFO_REQUEST,
+      executable: playerInfoRequest,
+      nickName: nickname,
+    );
+
+    sendCommand(command.toJson());
+  }
+
+  void _fetchPlayerInfoWithExistingToken(String token){
+
+    PlayerInfoRequest playerInfoRequest = PlayerInfoRequest(token: token, nickname: "fake_nickname");
+    Command command = Command(
+      commandType: CommandType.PLAYER_INFO_REQUEST,
+      executable: playerInfoRequest,
+      nickName: "fake_nickname",        //tanto sarà il server a identificare il giocatore dal token, questo è solo un placeholder
     );
 
     sendCommand(command.toJson());
@@ -261,7 +329,7 @@ class ClientManager extends ChangeNotifier {
   /// Pulisce eventuali messaggi di errore
   void clearAuthError() {
     authError = null;
-    authState = AuthState.unauthenticated;
+    authState = AuthenticationState.unauthenticated;
   }
 
   void handleBriscolaUpdate(BriscolaUpdate briscolaUpdate) {
@@ -354,7 +422,7 @@ class ClientManager extends ChangeNotifier {
     mySelfPlayer?.setHandCards(handUpdate.handCards);
   }
 
-  void handleLoginResponse(LoginResponse response){
+  /*void handleLoginResponse(LoginResponse response){
     //debug
     print('Response of the server: ${response.isLogged}, ${response.nickname}');
 
@@ -365,30 +433,30 @@ class ClientManager extends ChangeNotifier {
       final token = response.nickname;
 
       isAuthenticated = true;
-      authState = AuthState.authenticated;
+      authState = AuthenticationState.authenticated;
       currentScreen = AppScreenState.mainMenu;
 
-      mySelfPlayer = MySelfPlayer(response.nickname);
+      //mySelfPlayer = MySelfPlayer(response.nickname);
 
       _storage.write(key: 'auth_token', value: token);
 
-      _fetchPlayerInfo(token);
+      //_fetchPlayerInfo(token);
 
     } else {
       print('Login failed');
       // FALLIMENTO!
       isAuthenticated = false;
-      authState = AuthState.error;
+      authState = AuthenticationState.error;
       authError = "Login fallito. Prova un altro nome."; // Esempio
     }
 
-  }
+  }*/
 
   // NUOVO METODO PER RICHIEDERE I DATI DEL GIOCATORE
   void _fetchPlayerInfo(String token) {
     // Questa è la logica che prima era nel costruttore di MainMenuScreen
     print("Richiesta informazioni giocatore con il token...");
-    PlayerInfoRequest executable = PlayerInfoRequest(token: token);
+    PlayerInfoRequest executable = PlayerInfoRequest(token: token, nickname: "fake_nickname");
     Command command = Command(commandType: CommandType.PLAYER_INFO_REQUEST, executable: executable);
     sendCommand(command.toJson());
 
@@ -400,7 +468,31 @@ class ClientManager extends ChangeNotifier {
 
   void handlePlayerInfo(PlayerInfoResponse playerInfoResponse) {
 
-    mySelfPlayer = MySelfPlayer(playerInfoResponse.nickname);
+    if (playerInfoResponse.isLogged) {
+      print('Welcome, ${playerInfoResponse.nickname}');
+
+      //TODO: salvare token reale ricevuto dal server
+      final token = playerInfoResponse.nickname;
+
+      isAuthenticated = true;
+      authState = AuthenticationState.authenticated;
+      currentScreen = AppScreenState.mainMenu;
+
+      mySelfPlayer = MySelfPlayer(playerInfoResponse.nickname);
+
+      //mySelfPlayer = MySelfPlayer(response.nickname);
+
+      //_storage.write(key: 'auth_token', value: token);
+
+      //_fetchPlayerInfo(token);
+
+    } else {
+      print('Login failed');
+      // FALLIMENTO!
+      isAuthenticated = false;
+      authState = AuthenticationState.error;
+      authError = "Login fallito. Prova un altro nome."; // Esempio
+    }
   }
 
   void handleJoinGameResponse(JoinGameResponse joinGameResponse) {
@@ -480,74 +572,3 @@ class ClientManager extends ChangeNotifier {
 
 // ... altri metodi come loginWithGoogle, etc.
 }
-
-/*
-// --- MODIFICHE AI TUOI EXECUTABLE ---
-
-// Devi modificare la firma dei tuoi 'Executable'
-abstract class ExecutableInClient {
-  // Non riceve più 'PageInterface', ma 'ClientManager'
-  void execute(ClientManager manager);
-}
-
-// Esempio con LoginResponse
-class LoginResponse implements ExecutableInClient {
-  final MySelfPlayer playerData; // Dati parsati dal JSON
-  final String token;
-
-  LoginResponse(this.playerData, this.token);
-
-  factory LoginResponse.fromJson(Map<String, dynamic> json) {
-    // ... parsa il JSON per estrarre i dati del player e il token
-    return LoginResponse(
-        MySelfPlayer.fromJson(json['playerData']),
-        json['token']
-    );
-  }
-
-  @override
-  void execute(ClientManager manager) {
-    // AGGIORNA LO STATO nel manager, non la UI
-    manager.mySelfPlayer = playerData;
-    manager.isAuthenticated = true;
-
-    // Il token va salvato in flutter_secure_storage,
-    // possiamo farlo qui o nel manager
-    // final _storage = FlutterSecureStorage();
-    // _storage.write(key: 'auth_token', value: token);
-
-    print("LoginResponse eseguito, stato aggiornato.");
-  }
-}
-
-// Esempio con HandUpdate
-class HandUpdate implements ExecutableInClient {
-  final List<CardGame> newHand;
-
-  HandUpdate(this.newHand);
-
-  factory HandUpdate.fromJson(Map<String, dynamic> json) {
-    // ... parsa json['hand']
-    return HandUpdate(/* lista di carte parsata */ []);
-  }
-
-  @override
-  void execute(ClientManager manager) {
-    // AGGIORNA LO STATO
-    manager.hand = newHand;
-    print("HandUpdate eseguito, mano aggiornata.");
-  }
-}
-
-// E il tuo MySelfPlayer (classi di dati)
-class MySelfPlayer {
-  final String nickname;
-  MySelfPlayer(this.nickname);
-
-  factory MySelfPlayer.fromJson(Map<String, dynamic> json) {
-    return MySelfPlayer(json['nickname']);
-  }
-}
-
-class CardGame {}
-*/

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:test_socket/ClientManagerOld.dart';
 import 'package:test_socket/message/LoginResponse.dart';
 import 'package:test_socket/pages/MainMenuScreen.dart';
-import '../AuthState.dart';
+import '../AuthenticationState.dart';
 import '../ClientManager.dart';
 import '../command/Command.dart';
 import '../command/CommandType.dart';
@@ -17,7 +17,6 @@ import 'HomePageOld.dart';
 import 'MainMenuScreen.dart';
 
 class LoginPage extends StatefulWidget {
-  // 1. Rimuovi clientManager dal costruttore
   const LoginPage({super.key});
 
   @override
@@ -25,94 +24,96 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  // Controller per i vari campi
   final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // Stato locale per gestire se l'utente vuole fare Login o Registrazione
+  bool _isLoginMode = true;
 
   @override
   void initState() {
     super.initState();
-    // 2. Avvia il controllo del token all'inizio
-    // Usiamo addPostFrameCallback per sicurezza, per assicurarci
-    // che il 'context' sia pronto per il Provider.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ClientManager>(context, listen: false).checkLoginStatus();
     });
   }
 
-  // 3. Tutta la logica di storage e navigazione è stata rimossa.
-  // La pagina ora è molto più pulita.
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-  /// Logica per il login come ospite (ora chiama solo il manager)
+  // --- LOGICA DI LOGIN ---
+
+  /// Login con Email e Password
+  void _submitEmailAuth(BuildContext context) {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Inserisci email e password")),
+      );
+      return;
+    }
+
+    final manager = Provider.of<ClientManager>(context, listen: false);
+
+    if (_isLoginMode) {
+      // Chiama il metodo di Login nel manager
+      manager.loginWithEmail(email, password);
+    } else {
+      // Chiama il metodo di Registrazione nel manager
+      manager.signUpWithEmail(email, password);
+    }
+  }
+
   void _loginAsGuest(BuildContext context) {
-    final username = _usernameController.text;
-
-    // 4. Chiama il manager per avviare il login
+    final username = _usernameController.text.trim();
+    if (username.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Inserisci uno username per l'ospite")),
+      );
+      return;
+    }
     Provider.of<ClientManager>(context, listen: false).loginAsGuest(username);
   }
 
-  /// Logica per Google (chiama il manager)
   void _loginWithGoogle() {
     Provider.of<ClientManager>(context, listen: false).loginWithGoogle();
   }
 
-  /// Logica per Apple (chiama il manager)
   void _loginWithApple() {
     Provider.of<ClientManager>(context, listen: false).loginWithApple();
   }
 
   @override
-  void dispose() {
-    _usernameController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // 5. USA CONSUMER PER ASCOLTARE I CAMBIAMENTI
     return Consumer<ClientManager>(
       builder: (context, manager, child) {
 
-        // --- GESTIONE DEGLI EFFETTI COLLATERALI ---
-
-        // EFFETTO 1: Login Riuscito -> Naviga
-        /*if (manager.authState == AuthState.authenticated) {
-          // Usiamo 'addPostFrameCallback' per navigare *dopo*
-          // che il 'build' è completato, per evitare errori.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              print("PASSO A MAIN MENU SCREEN");
-              // Non passiamo più il manager, MainMenuScreen lo prenderà dal Provider
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MainMenuScreen(),
-                ),
-              );
-            }
-          });
-          // Mostra uno spinner mentre prepari la navigazione
-          return _buildLoadingScaffold();
-        }*/
-
-        // EFFETTO 2: Errore -> Mostra SnackBar
+        // Gestione Errori
         if (manager.authError != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(manager.authError!)),
             );
-            // Resetta l'errore nel manager per non mostrarlo di nuovo
             manager.clearAuthError();
           });
         }
 
-        // --- COSTRUZIONE DELLA UI ---
-
-        // Se sta caricando (o stato iniziale), mostra spinner
-        if (manager.authState == AuthState.loading ||
-            manager.authState == AuthState.unknown) {
+        // Gestione Loading
+        if (manager.authState == AuthenticationState.loading ||
+            manager.authState == AuthenticationState.unknown) {
           return _buildLoadingScaffold();
         }
 
-        // Altrimenti (unauthenticated, error), mostra la pagina di login
+        // UI Principale
         return Scaffold(
           body: Container(
             decoration: const BoxDecoration(
@@ -125,14 +126,13 @@ class _LoginPageState extends State<LoginPage> {
             child: SafeArea(
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 20.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // --- Titolo ---
                       Text(
-                        "BENVENUTO",
+                        _isLoginMode ? "BENTORNATO" : "CREA ACCOUNT",
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           color: Colors.white,
@@ -140,62 +140,93 @@ class _LoginPageState extends State<LoginPage> {
                           letterSpacing: 2,
                         ),
                       ),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 30),
 
-                      // --- Login Social (Google) ---
-                      MenuButton(
-                        text: "Accedi con Google",
-                        // Disabilita il bottone se sta caricando
-                        onPressed: manager.authState == AuthState.loading
-                            ? null
-                            : _loginWithGoogle,
-                        isPrimary: false,
-                        icon: Icons.g_mobiledata,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // --- Login Social (Game Center / Apple) ---
-                      MenuButton(
-                        text: "Accedi con Apple",
-                        onPressed: manager.authState == AuthState.loading
-                            ? null
-                            : _loginWithApple,
-                        isPrimary: false,
-                        icon: Icons.apple,
-                      ),
-                      const SizedBox(height: 40),
-
-                      // --- Divisore "OPPURE" ---
-                      Row(
-                        children: [
-                          Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Text(
-                              "OPPURE",
-                              style: TextStyle(color: Colors.white.withOpacity(0.7)),
-                            ),
-                          ),
-                          Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
-                        ],
-                      ),
-                      const SizedBox(height: 40),
-
-                      // --- Campo Username (Ospite) ---
+                      // --- SEZIONE EMAIL & PASSWORD ---
                       ModernTextField(
-                        controller: _usernameController,
-                        hintText: "Inserisci username (Ospite)",
-                        icon: Icons.person_outline,
+                        controller: _emailController,
+                        hintText: "Email",
+                        icon: Icons.email_outlined,
+                      ),
+                      const SizedBox(height: 16),
+                      ModernTextField(
+                        controller: _passwordController,
+                        hintText: "Password",
+                        icon: Icons.lock_outline,
                       ),
                       const SizedBox(height: 24),
 
-                      // --- Bottone Login (Ospite) ---
+                      // Bottone Login/Registrati
+                      MenuButton(
+                        text: _isLoginMode ? "ACCEDI CON EMAIL" : "REGISTRATI",
+                        onPressed: manager.authState == AuthenticationState.loading
+                            ? null
+                            : () => _submitEmailAuth(context),
+                        isPrimary: true, // Colore principale per l'azione email
+                      ),
+
+                      // Toggle Login/Registrazione
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _isLoginMode = !_isLoginMode;
+                          });
+                        },
+                        child: Text(
+                          _isLoginMode
+                              ? "Non hai un account? Registrati"
+                              : "Hai già un account? Accedi",
+                          style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+                      _buildDivider("SOCIAL"),
+                      const SizedBox(height: 20),
+
+                      // --- SEZIONE SOCIAL ---
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Usiamo versioni più piccole o icone se preferisci,
+                          // altrimenti mantieni i MenuButton full width
+                          Expanded(
+                            child: MenuButton(
+                              text: "Google",
+                              onPressed: _loginWithGoogle,
+                              isPrimary: false,
+                              icon: Icons.g_mobiledata,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: MenuButton(
+                              text: "Apple",
+                              onPressed: _loginWithApple,
+                              isPrimary: false,
+                              icon: Icons.apple,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 30),
+                      _buildDivider("OPPURE"),
+                      const SizedBox(height: 30),
+
+                      // --- SEZIONE OSPITE ---
+                      ModernTextField(
+                        controller: _usernameController,
+                        hintText: "Nickname (Ospite)",
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
                       MenuButton(
                         text: "ENTRA COME OSPITE",
-                        onPressed: manager.authState == AuthState.loading
+                        onPressed: manager.authState == AuthenticationState.loading
                             ? null
                             : () => _loginAsGuest(context),
-                        isPrimary: true,
+                        isPrimary: false, // Meno enfasi sull'ospite ora
                       ),
                     ],
                   ),
@@ -208,7 +239,22 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  /// Un widget helper per mostrare lo scaffold di caricamento
+  Widget _buildDivider(String text) {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            text,
+            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+      ],
+    );
+  }
+
   Widget _buildLoadingScaffold() {
     return Scaffold(
       body: Container(

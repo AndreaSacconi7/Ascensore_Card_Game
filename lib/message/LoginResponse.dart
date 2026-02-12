@@ -24,7 +24,7 @@ class LoginResponse implements ExecutableInClient {
 
   @override
   void execute({required ClientManager clientManager}) {
-      clientManager.handleLoginResponse(this);
+      //clientManager.handleLoginResponse(this);
   }
 
 

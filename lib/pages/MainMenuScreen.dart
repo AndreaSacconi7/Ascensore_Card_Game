@@ -135,6 +135,17 @@ class MainMenuScreen extends StatelessWidget {
                             print("Offline premuto");
                           },
                         ),
+
+                        const SizedBox(height: 20),
+
+                        MenuButton(
+                          text: "LOGOUT",
+                          onPressed: () {
+                            print("Logout premuto");
+                            final manager = Provider.of<ClientManager>(context, listen: false);
+                            manager.logOut();
+                          }
+                        ),
                       ],
                     ),
                   ),
