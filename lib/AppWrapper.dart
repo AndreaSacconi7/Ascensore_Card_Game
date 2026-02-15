@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:test_socket/pages/GameOverScreen.dart';
 import 'package:test_socket/pages/GameScreen.dart';
 import 'package:test_socket/pages/LoadingScreen.dart';
 import 'package:test_socket/pages/LoginPage.dart';
@@ -50,6 +51,10 @@ class AppWrapper extends StatelessWidget {
       case AppScreenState.inGame:
       // Mostra la pagina di gioco!
         return GameScreen(); // Sostituisci con la tua pagina di gioco
+
+      case AppScreenState.gameOver:
+      // Mostra la schermata di Game Over
+        return GameOverScreen(); // Sostituisci con la tua GameOverScreen
 
       default:
       // Fallback

@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:test_socket/AppScreenState.dart';
+import 'package:test_socket/message/EndGame.dart';
+import 'package:test_socket/message/InfoAfterReconnection.dart';
 import 'package:test_socket/message/JoinGameResponse.dart';
+import 'package:test_socket/message/PlayerExitGame.dart';
 import 'package:test_socket/model/CardGame.dart';
 import 'package:test_socket/model/SetResultAnimationState.dart';
 import 'package:test_socket/model/Seed.dart';
@@ -114,6 +117,12 @@ class ClientManager extends ChangeNotifier {
       executable = EndRoundUpdate.fromJson(jsonMap);
     } else if(stringMessageType == 'END_SET'){
       executable = EndSetUpdate.fromJson(jsonMap);
+    } else if(stringMessageType == 'END_GAME'){
+      executable = EndGame.fromJson(jsonMap);
+    } else if(stringMessageType == 'PLAYER_EXIT_GAME') {
+      executable = PlayerExitGame.fromJson(jsonMap);
+    } else if(stringMessageType == 'INFO_AFTER_RECONNECTION') {
+      executable = InfoAfterReconnection.fromJson(jsonMap);
     } else {
       print('Unknown message type: ${jsonMap['messageType']}');
       return;
@@ -163,17 +172,38 @@ class ClientManager extends ChangeNotifier {
     final session = Supabase.instance.client.auth.currentSession;
 
     if (session != null) {
-      // Trovato! Supabase ha gestito il refresh se necessario.
-      String validToken = session.accessToken;
-      print("Sessione Supabase trovata. Token: ${validToken.substring(0, 10)}...");
 
-      // 3. Autenticazione col Backend (WebSocket)
-      // Qui inviamo il comando che il tuo backend Java si aspetta
-      _fetchPlayerInfoWithExistingToken(validToken);
+      if(session.isExpired){
+        try {
+          // Forza il refresh del token
+          final response = await Supabase.instance.client.auth.refreshSession();
+          final freshToken = response.session?.accessToken;
 
-      isAuthenticated = true;
+          if (freshToken != null) {
+            print("Token rinnovato con successo!");
+            _fetchPlayerInfoWithExistingToken(freshToken);
+          } else {
+            print("Impossibile rinnovare. Logout forzato.");
+            logOut();
+          }
+        } catch (e) {
+          print("Errore durante il refresh del token: ${e.toString()}");
+          logOut();
+        }
+      }else{
+        //Token ancora valido, procedo normalmente
+        // Trovato! Supabase ha gestito il refresh se necessario.
+        String validToken = session.accessToken;
+        print("Sessione Supabase trovata. Token: ${validToken.substring(0, 10)}...");
+
+        // 3. Autenticazione col Backend (WebSocket)
+        // Qui inviamo il comando che il tuo backend Java si aspetta
+        _fetchPlayerInfoWithExistingToken(validToken);
+      }
+
+      /*isAuthenticated = true;
       authState = AuthenticationState.authenticated;
-      currentScreen = AppScreenState.mainMenu;
+      currentScreen = AppScreenState.mainMenu;*/
 
     } else {
       // Nessuna sessione salvata, l'utente deve fare il login manuale
@@ -273,7 +303,7 @@ class ClientManager extends ChangeNotifier {
       // Nota: Supabase di default richiede conferma email.
       // Se disattivata, fa login automatico.
       if (res.session != null) {
-        _fetchPlayerInfoWithExistingToken(res.session!.accessToken);
+        _fetchPlayerInfoFirstTime(res.session!.accessToken, email);
       } else {
         //NON ATTIVA QUESTA COSA
         authError = "Controlla la tua email per confermare l'iscrizione!";
@@ -542,6 +572,7 @@ class ClientManager extends ChangeNotifier {
 
   void handleStartingGame(StartingGame startingGame) {
 
+    print("STARTING a GAME !!!!!");
     game = Game();
     //aggiungo altri player alla lista di giocatori nel game
     for(var playerNick in startingGame.connectedPlayers){
@@ -563,11 +594,51 @@ class ClientManager extends ChangeNotifier {
     //players inviati dal server sono già in ordine di turno
     game!.setPlayerOrder(game!.players);
 
-    //faccio navigare la UI alla HomePage
+    //faccio navigare la UI alla gameScreen
     currentScreen = AppScreenState.inGame;
   }
 
   void handleTextMessage(TextMessage textMessage) {}
+
+  void handlePlayerExitGame(PlayerExitGame playerExitGame) {
+    //TODO: implementare
+  }
+
+  void handleEndGame(EndGame endGame) {
+
+    endGame.gameResult.forEach((nickname, score) {
+      print("Giocatore: $nickname, Punteggio finale: $score");
+      for(Player p in game!.players){
+        if(p.getNickname() == nickname){
+          p.setScore(score);
+          break;
+        }
+      }
+    });
+
+    currentScreen = AppScreenState.gameOver;
+  }
+
+  void handleInfoAfterReconnection(InfoAfterReconnection infoAfterReconnection) {
+    int score, bets, roundsWon;
+    for(Player p in game!.players){
+      score = infoAfterReconnection.scores[p.getNickname()]!;
+      bets = infoAfterReconnection.bets[p.getNickname()]!;
+      roundsWon = infoAfterReconnection.roundsWon[p.getNickname()]!;
+      p.setScore(score);
+      p.setBet(bets);
+      p.setRoundsWon(roundsWon);
+    }
+    notifyListeners();
+  }
+
+  void endGame(bool didWin) {
+
+    //TODO: in seguito implementare aumento di ex points, premi ecc... in base a didWin
+
+    currentScreen = AppScreenState.mainMenu;
+    notifyListeners();
+  }
 
 
 // ... altri metodi come loginWithGoogle, etc.

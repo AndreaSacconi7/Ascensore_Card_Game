@@ -17,6 +17,10 @@ Future<void> main() async {
   await Supabase.initialize(
     url: 'https://hwjukdydgsejqbhzezyt.supabase.co',
     anonKey: 'sb_publishable_1c4XQ9P0rHnkh2sCC6pmlw_-1AGsTk9',
+    // Queste opzioni attivano il salvataggio automatico sicuro
+    authOptions: const FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+    ),
   );
 
   final channel = WebSocketChannel.connect(Uri.parse(kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws'));

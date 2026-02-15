@@ -2,5 +2,6 @@ enum AppScreenState {
   loading,
   login,
   mainMenu,
-  inGame
+  inGame,
+  gameOver
 }
