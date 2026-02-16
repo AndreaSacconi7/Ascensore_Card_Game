@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,6 +20,7 @@ import 'AuthenticationState.dart';
 import 'command/Command.dart';
 import 'command/CommandType.dart';
 import 'command/LoginRequest.dart';
+import 'command/Logout.dart';
 import 'command/PlayerInfoRequest.dart';
 import 'message/BriscolaUpdate.dart';
 import 'message/EndRoundUpdate.dart';
@@ -35,6 +37,7 @@ import 'message/TextMessage.dart';
 import 'model/Game.dart';
 import 'model/MySelfPlayer.dart';
 import 'model/Player.dart';
+import 'model/PlayerState.dart';
 
 // 1. Rendi il ClientManager un ChangeNotifier
 class ClientManager extends ChangeNotifier {
@@ -44,8 +47,8 @@ class ClientManager extends ChangeNotifier {
   // final _condition = Condition();
   // bool _isRunning = false;
 
-  late final WebSocketChannel channel;
-  late final Stream _stream;
+  WebSocketChannel? channel;
+  StreamSubscription? _stream;
 
   // 3. Aggiungi qui lo STATO (i dati di gioco principali)
   final _storage = const FlutterSecureStorage();
@@ -59,12 +62,12 @@ class ClientManager extends ChangeNotifier {
 
   SetResultAnimationState lastSetResult = SetResultAnimationState.none;
 
-  ClientManager(WebSocketChannel channel) {
-    this.channel = channel;
-    _stream = channel.stream.asBroadcastStream();
+  ClientManager() {
+    //this.channel = channel;
+    //_stream = channel.stream.asBroadcastStream();
 
     // 4. Ascolto diretto. Il flusso dei messaggi è la nostra "coda".
-    _stream.listen(_handleMessage);
+    //_stream.listen(_handleMessage);
     // _startProcessing(); // Non più necessario
   }
 
@@ -81,7 +84,7 @@ class ClientManager extends ChangeNotifier {
   void sendCommand(dynamic jsonCommand) {
     log('Sending command to server: $jsonCommand');
 
-    channel.sink.add(jsonCommand);
+    channel!.sink.add(jsonCommand);
   }
 
   // 5. _handleMessage ora ESEGUE e NOTIFICA
@@ -138,6 +141,34 @@ class ClientManager extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Metodo per connettersi (chiamato al Login o signUp)
+  void connect() {
+    if (channel != null) return; // Già connesso
+
+    try {
+      channel = WebSocketChannel.connect(Uri.parse(kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws'));
+
+      // Mettiamoci in ascolto
+      _stream = channel!.stream.listen(
+            (message) {
+          _handleMessage(message);
+        },
+        onError: (error) {
+          print("Errore Socket: $error");
+          logOut(); // Disconnetti in caso di errore
+        },
+        onDone: () {
+          print("Socket chiuso dal server");
+          logOut(); // Pulisci tutto se il server chiude
+        },
+      );
+    } catch (e) {
+      print("Impossibile connettersi: $e");
+      //isConnected = false;
+      notifyListeners();
+    }
+  }
+
 
   // Dentro ClientManager.dart
   Future<void> logOut() async {
@@ -145,7 +176,23 @@ class ClientManager extends ChangeNotifier {
     await Supabase.instance.client.auth.signOut();
 
     // 2. Chiudi la connessione col server Java (importante!)
-    // socketService.disconnect();
+    Logout logout = Logout();
+    Command command = Command(
+      commandType: CommandType.LOGOUT,
+      executable: logout,
+    );
+    sendCommand(command.toJson());
+
+    await _stream?.cancel(); // Smetti di ascoltare
+    _stream = null;
+
+    channel?.sink.close(); // Chiudi il socket
+    channel = null;        // Resetta la variabile per il prossimo login
+
+    //resetto lo stato del client manager
+    mySelfPlayer = null;
+    game = null;
+    lastSetResult = SetResultAnimationState.none;
 
     // 3. Aggiorna lo stato della UI
     authState = AuthenticationState.unauthenticated;
@@ -319,6 +366,8 @@ class ClientManager extends ChangeNotifier {
 
   void _fetchPlayerInfoFirstTime(String token, String nickname){
 
+    connect();
+
     PlayerInfoRequest playerInfoRequest = PlayerInfoRequest(token: token, nickname: nickname);
     Command command = Command(
       commandType: CommandType.PLAYER_INFO_REQUEST,
@@ -330,6 +379,8 @@ class ClientManager extends ChangeNotifier {
   }
 
   void _fetchPlayerInfoWithExistingToken(String token){
+
+    connect();
 
     PlayerInfoRequest playerInfoRequest = PlayerInfoRequest(token: token, nickname: "fake_nickname");
     Command command = Command(
@@ -635,6 +686,14 @@ class ClientManager extends ChangeNotifier {
   void endGame(bool didWin) {
 
     //TODO: in seguito implementare aumento di ex points, premi ecc... in base a didWin
+    //reset dello stato del game per prepararsi a un nuovo gioco
+    game = null;
+    mySelfPlayer!.handCards = [];
+    mySelfPlayer!.setScore(0);
+    mySelfPlayer!.setBet(0);
+    mySelfPlayer!.setRoundsWon(0);
+    mySelfPlayer!.clearPlayedCard();
+    mySelfPlayer!.setPlayerState(PlayerState.IDLE);
 
     currentScreen = AppScreenState.mainMenu;
     notifyListeners();

@@ -5,4 +5,5 @@ enum CommandType {
   PING_COMMAND,
   PUT_CARD,
   SET_BET,
+  LOGOUT,
 }

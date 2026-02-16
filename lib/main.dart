@@ -23,11 +23,11 @@ Future<void> main() async {
     ),
   );
 
-  final channel = WebSocketChannel.connect(Uri.parse(kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws'));
+  //final channel = WebSocketChannel.connect(Uri.parse(kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws'));
   //final channel = WebSocketChannel.connect(Uri.parse('ws://10.0.2.2:8080/ws'));
 
   // 2. Crea l'istanza del tuo ClientManager (che è un ChangeNotifier)
-  final clientManager = ClientManager(channel);
+  final clientManager = ClientManager();
 
   runApp(
     ChangeNotifierProvider(
