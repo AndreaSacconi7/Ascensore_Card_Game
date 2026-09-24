@@ -2,7 +2,11 @@
 
 Real-time multiplayer client for **Ascensore**, a traditional Italian trick-taking card game, built with **Flutter** and talking to a **Java / Spring Boot** game server over **WebSockets**.
 
-<!-- TODO: add a screenshot or short GIF of a game here, e.g. ![Gameplay](docs/gameplay.gif) -->
+<p align="center">
+  <img src="docs/screenshots/game_design.png" width="320" alt="Game screen UI design">
+  <br>
+  <em>Game screen — UI design mockup (Figma)</em>
+</p>
 
 ## The game
 
@@ -18,6 +22,12 @@ At the start of every set each player **bets exactly how many tricks they will t
 - **Server-authoritative state** — the client never mutates game state optimistically; it validates moves locally (must follow suit, last-bidder constraint) and waits for the server to confirm
 - Drag-and-drop cards, bet slider, animated trick and set results
 - Multiple rematches without restarting the app
+
+## Roadmap
+
+- **Special abilities** *(planned)* — power-up cards that let players make special moves during a game, shown in the mockup above:
+  - **Swap** *(Uno-style reverse card)* — exchange your hand with another player's
+  - **Joker** — play a card with a value of your choice
 
 ## Architecture
 
