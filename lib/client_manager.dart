@@ -1,57 +1,47 @@
 import 'dart:developer';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:test_socket/AppScreenState.dart';
-import 'package:test_socket/message/EndGame.dart';
-import 'package:test_socket/message/InfoAfterReconnection.dart';
-import 'package:test_socket/message/JoinGameResponse.dart';
-import 'package:test_socket/message/PlayerExitGame.dart';
-import 'package:test_socket/model/CardGame.dart';
-import 'package:test_socket/model/SetResultAnimationState.dart';
-import 'package:test_socket/model/Seed.dart';
+import 'package:ascensore_client/app_screen_state.dart';
+import 'package:ascensore_client/message/end_game.dart';
+import 'package:ascensore_client/message/info_after_reconnection.dart';
+import 'package:ascensore_client/message/join_game_response.dart';
+import 'package:ascensore_client/message/player_exit_game.dart';
+import 'package:ascensore_client/model/card_game.dart';
+import 'package:ascensore_client/model/set_result_animation_state.dart';
+import 'package:ascensore_client/model/seed.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 import 'dart:async';
 
-import 'AuthenticationState.dart';
-import 'command/Command.dart';
-import 'command/CommandType.dart';
-import 'command/LoginRequest.dart';
-import 'command/Logout.dart';
-import 'command/PlayerInfoRequest.dart';
-import 'message/BriscolaUpdate.dart';
-import 'message/EndRoundUpdate.dart';
-import 'message/EndSetUpdate.dart';
-import 'message/ExecutableInClient.dart';
-import 'message/HandUpdate.dart';
-import 'message/LoginResponse.dart';
-import 'message/PlayedCardUpdate.dart';
-import 'message/PlayerInfoResponse.dart';
-import 'message/PlayerStateUpdate.dart';
-import 'message/SettedBetUpdate.dart';
-import 'message/StartingGame.dart';
-import 'message/TextMessage.dart';
-import 'model/Game.dart';
-import 'model/MySelfPlayer.dart';
-import 'model/Player.dart';
-import 'model/PlayerState.dart';
+import 'authentication_state.dart';
+import 'command/command.dart';
+import 'command/command_type.dart';
+import 'command/logout.dart';
+import 'command/player_info_request.dart';
+import 'message/briscola_update.dart';
+import 'message/end_round_update.dart';
+import 'message/end_set_update.dart';
+import 'message/executable_in_client.dart';
+import 'message/hand_update.dart';
+import 'message/login_response.dart';
+import 'message/played_card_update.dart';
+import 'message/player_info_response.dart';
+import 'message/player_state_update.dart';
+import 'message/setted_bet_update.dart';
+import 'message/starting_game.dart';
+import 'message/text_message.dart';
+import 'model/game.dart';
+import 'model/my_self_player.dart';
+import 'model/player.dart';
+import 'model/player_state.dart';
 
-// 1. Rendi il ClientManager un ChangeNotifier
+// Stato globale del client: connessione WebSocket, autenticazione e partita.
 class ClientManager extends ChangeNotifier {
-  // 2. Rimuovi la logica della PageInterface e della Coda
-  // PageInterface? currentPage;
-  // final Queue<Message> _messageQueue = Queue<Message>();
-  // final _condition = Condition();
-  // bool _isRunning = false;
-
   WebSocketChannel? channel;
   StreamSubscription? _stream;
 
-  // 3. Aggiungi qui lo STATO (i dati di gioco principali)
-  final _storage = const FlutterSecureStorage();
+  // Stato di gioco e autenticazione
   MySelfPlayer? mySelfPlayer;
   Game? game;
   bool isAuthenticated = false;
@@ -62,21 +52,11 @@ class ClientManager extends ChangeNotifier {
 
   SetResultAnimationState lastSetResult = SetResultAnimationState.none;
 
-  ClientManager() {
-    //this.channel = channel;
-    //_stream = channel.stream.asBroadcastStream();
-
-    // 4. Ascolto diretto. Il flusso dei messaggi è la nostra "coda".
-    //_stream.listen(_handleMessage);
-    // _startProcessing(); // Non più necessario
-  }
-
   void setCurrentScreen(AppScreenState newScreen) {
     currentScreen = newScreen;
     notifyListeners();
   }
 
-  // Il getter per mySelfPlayer (lo avevi già)
   MySelfPlayer? getMySelfPlayer() {
     return mySelfPlayer;
   }
@@ -87,13 +67,13 @@ class ClientManager extends ChangeNotifier {
     channel!.sink.add(jsonCommand);
   }
 
-  // 5. _handleMessage ora ESEGUE e NOTIFICA
+  // Deserializza il messaggio, lo esegue sullo stato e notifica la UI
   void _handleMessage(dynamic jsonMessage) {
-    print('Message from server: $jsonMessage');
+    debugPrint('Message from server: $jsonMessage');
     final Map<String, dynamic> jsonMap = jsonDecode(jsonMessage);
     final String stringMessageType = jsonMap['messageType'];
 
-    // Identifica l'eseguibile (logica perfetta, la teniamo)
+    // Identifica l'eseguibile in base al tipo di messaggio
     final ExecutableInClient executable;
 
     if(stringMessageType == 'LOGIN_RESPONSE') {
@@ -127,26 +107,30 @@ class ClientManager extends ChangeNotifier {
     } else if(stringMessageType == 'INFO_AFTER_RECONNECTION') {
       executable = InfoAfterReconnection.fromJson(jsonMap);
     } else {
-      print('Unknown message type: ${jsonMap['messageType']}');
+      debugPrint('Unknown message type: ${jsonMap['messageType']}');
       return;
     }
 
-    // 6. ESEGUI SUL SERVIZIO STESSO
     // L'eseguibile ora modifica i dati DENTRO il ClientManager
     executable.execute(clientManager: this);
 
-    // 7. NOTIFICA LA UI
     // Dopo che i dati sono stati aggiornati, avvisa tutti
-    // i widget in ascolto (le tue pagine)
+    // i widget in ascolto
     notifyListeners();
   }
+
+  // URL del server: sovrascrivibile con --dart-define=SERVER_URL=ws://host:port/ws
+  static const String _serverUrlOverride = String.fromEnvironment('SERVER_URL');
+  static String get _serverUrl => _serverUrlOverride.isNotEmpty
+      ? _serverUrlOverride
+      : (kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws');
 
   // Metodo per connettersi (chiamato al Login o signUp)
   void connect() {
     if (channel != null) return; // Già connesso
 
     try {
-      channel = WebSocketChannel.connect(Uri.parse(kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws'));
+      channel = WebSocketChannel.connect(Uri.parse(_serverUrl));
 
       // Mettiamoci in ascolto
       _stream = channel!.stream.listen(
@@ -154,34 +138,33 @@ class ClientManager extends ChangeNotifier {
           _handleMessage(message);
         },
         onError: (error) {
-          print("Errore Socket: $error");
+          debugPrint("Errore Socket: $error");
           logOut(); // Disconnetti in caso di errore
         },
         onDone: () {
-          print("Socket chiuso dal server");
+          debugPrint("Socket chiuso dal server");
           logOut(); // Pulisci tutto se il server chiude
         },
       );
     } catch (e) {
-      print("Impossibile connettersi: $e");
-      //isConnected = false;
+      debugPrint("Impossibile connettersi: $e");
       notifyListeners();
     }
   }
 
 
-  // Dentro ClientManager.dart
   Future<void> logOut() async {
-    // 1. Dillo a Supabase (cancella il token locale)
+    // Chiude la sessione Supabase (cancella il token locale)
     await Supabase.instance.client.auth.signOut();
 
-    // 2. Chiudi la connessione col server Java (importante!)
-    Logout logout = Logout();
-    Command command = Command(
-      commandType: CommandType.LOGOUT,
-      executable: logout,
-    );
-    sendCommand(command.toJson());
+    // Avvisa il server, se la connessione è ancora aperta
+    if (channel != null) {
+      try {
+        sendCommand(Command(commandType: CommandType.LOGOUT, executable: Logout()).toJson());
+      } catch (e) {
+        debugPrint("Impossibile inviare il logout: $e");
+      }
+    }
 
     await _stream?.cancel(); // Smetti di ascoltare
     _stream = null;
@@ -194,28 +177,24 @@ class ClientManager extends ChangeNotifier {
     game = null;
     lastSetResult = SetResultAnimationState.none;
 
-    // 3. Aggiorna lo stato della UI
+    // Torna alla schermata di login
     authState = AuthenticationState.unauthenticated;
     authError = null;
     isAuthenticated = false;
     currentScreen = AppScreenState.login;
     notifyListeners();
 
-    print("Logout effettuato. Token cancellato.");
+    debugPrint("Logout effettuato. Token cancellato.");
   }
 
   // --- AZIONI CHIAMATE DALLA UI ---
   /// Controlla se un token è già salvato all'avvio dell'app
   Future<void> checkLoginStatus() async {
 
-    // 1. RIMUOVI LA CANCELLAZIONE DEBUG!
-    // Se lasci questo, l'utente dovrà fare login ogni volta che apre l'app!
-    // await _storage.delete(key: 'auth_token');
-
     authState = AuthenticationState.loading;
     notifyListeners();
 
-    // 2. Chiedi a Supabase: "Abbiamo una sessione valida salvata?"
+    // Supabase ha una sessione salvata?
     final session = Supabase.instance.client.auth.currentSession;
 
     if (session != null) {
@@ -227,34 +206,25 @@ class ClientManager extends ChangeNotifier {
           final freshToken = response.session?.accessToken;
 
           if (freshToken != null) {
-            print("Token rinnovato con successo!");
+            debugPrint("Token rinnovato con successo!");
             _fetchPlayerInfoWithExistingToken(freshToken);
           } else {
-            print("Impossibile rinnovare. Logout forzato.");
+            debugPrint("Impossibile rinnovare. Logout forzato.");
             logOut();
           }
         } catch (e) {
-          print("Errore durante il refresh del token: ${e.toString()}");
+          debugPrint("Errore durante il refresh del token: ${e.toString()}");
           logOut();
         }
       }else{
-        //Token ancora valido, procedo normalmente
-        // Trovato! Supabase ha gestito il refresh se necessario.
-        String validToken = session.accessToken;
-        print("Sessione Supabase trovata. Token: ${validToken.substring(0, 10)}...");
-
-        // 3. Autenticazione col Backend (WebSocket)
-        // Qui inviamo il comando che il tuo backend Java si aspetta
-        _fetchPlayerInfoWithExistingToken(validToken);
+        // Token ancora valido: autenticazione diretta col server
+        debugPrint("Sessione Supabase trovata.");
+        _fetchPlayerInfoWithExistingToken(session.accessToken);
       }
-
-      /*isAuthenticated = true;
-      authState = AuthenticationState.authenticated;
-      currentScreen = AppScreenState.mainMenu;*/
 
     } else {
       // Nessuna sessione salvata, l'utente deve fare il login manuale
-      print("Nessuna sessione trovata.");
+      debugPrint("Nessuna sessione trovata.");
       isAuthenticated = false;
       authState = AuthenticationState.unauthenticated;
       currentScreen = AppScreenState.login;
@@ -263,64 +233,6 @@ class ClientManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Avvia il login con Apple
-  void loginWithApple() {
-    authState = AuthenticationState.loading;
-    notifyListeners();
-
-    // TODO: Inserisci la logica dell'SDK 'sign_in_with_apple'
-    // 1. Chiama l'SDK di Apple
-    // 2. Invia le credenziali al tuo server
-    // 3. Il server risponderà con 'LOGIN_RESPONSE'
-    //    gestito da _handleMessage
-  }
-
-  /// Avvia il login con Google
-  void loginWithGoogle() {
-    authState = AuthenticationState.loading;
-    notifyListeners();
-
-    // TODO: Inserisci la logica dell'SDK di Google
-    // 1. Chiama l'SDK di Google per ottenere il token
-    // 2. Quando hai il token, invialo al tuo server
-    // 3. Il tuo server risponderà con un 'LOGIN_RESPONSE'
-    //    che sarà gestito automaticamente da _handleMessage
-
-    // Se fallisce, gestisci l'errore:
-    // _authState = AuthState.error;
-    // _authError = "Login con Google fallito.";
-    // notifyListeners();
-  }
-
-
-  /// Avvia il login come ospite
-  void loginAsGuest(String username) {
-    if (username.isEmpty) {
-      authState = AuthenticationState.error;
-      authError = "Per favore, inserisci uno username";
-      currentScreen = AppScreenState.login;
-      notifyListeners();
-      return;
-    }
-
-    authState = AuthenticationState.loading;
-    notifyListeners();
-
-    // --- Invio del comando al server ---
-    final password = "guest_password"; // Fittizia
-
-    //TODO: modificare questo command e inviare invece un fetchPlayerInfo con nickname voluto. però gestire risposta che deve sostiuire quella che ora è la risposta del login in caso il nickname non vada bene
-    LoginRequest loginRequest = LoginRequest(username: username, password: password);
-    Command command = Command(
-      commandType: CommandType.LOGIN_COMMAND,
-      executable: loginRequest,
-      nickName: username,
-    );
-
-    sendCommand(command.toJson());
-  }
-
-  //NEW LOGIN METHOD:
   Future<void> loginWithEmail(String email, String password) async {
     authState = AuthenticationState.loading;
     notifyListeners();
@@ -484,14 +396,14 @@ class ClientManager extends ChangeNotifier {
 
   void _clearBoardForNextRound(){
     for(var p in game!.players){
-      p.setPlayedCard(new CardGame(Seed.VOID, 0));
+      p.setPlayedCard(CardGame(Seed.VOID, 0));
     }
     notifyListeners();
   }
 
   void _clearBoardForNextSet(){
     for(var p in game!.players){
-      p.setPlayedCard(new CardGame(Seed.VOID, 0));
+      p.setPlayedCard(CardGame(Seed.VOID, 0));
       p.setRoundsWon(0);
       p.setBet(0);
     }
@@ -503,85 +415,32 @@ class ClientManager extends ChangeNotifier {
     mySelfPlayer?.setHandCards(handUpdate.handCards);
   }
 
-  /*void handleLoginResponse(LoginResponse response){
-    //debug
-    print('Response of the server: ${response.isLogged}, ${response.nickname}');
-
-    if (response.isLogged) {
-      print('Welcome, ${response.nickname}');
-
-      //TODO: salvare token reale ricevuto dal server
-      final token = response.nickname;
-
-      isAuthenticated = true;
-      authState = AuthenticationState.authenticated;
-      currentScreen = AppScreenState.mainMenu;
-
-      //mySelfPlayer = MySelfPlayer(response.nickname);
-
-      _storage.write(key: 'auth_token', value: token);
-
-      //_fetchPlayerInfo(token);
-
-    } else {
-      print('Login failed');
-      // FALLIMENTO!
-      isAuthenticated = false;
-      authState = AuthenticationState.error;
-      authError = "Login fallito. Prova un altro nome."; // Esempio
-    }
-
-  }*/
-
-  // NUOVO METODO PER RICHIEDERE I DATI DEL GIOCATORE
-  void _fetchPlayerInfo(String token) {
-    // Questa è la logica che prima era nel costruttore di MainMenuScreen
-    print("Richiesta informazioni giocatore con il token...");
-    PlayerInfoRequest executable = PlayerInfoRequest(token: token, nickname: "fake_nickname");
-    Command command = Command(commandType: CommandType.PLAYER_INFO_REQUEST, executable: executable);
-    sendCommand(command.toJson());
-
-    // NOTA: Il tuo server ora risponderà con un messaggio (es. PLAYER_STATE_UPDATE o simile)
-    // che sarà gestito normalmente da _handleMessage
-    // (Ho commentato la logica perché non ho le classi PlayerInfoRequest, ecc,
-    // ma tu devi DECOMMENTARLA)
-  }
-
   void handlePlayerInfo(PlayerInfoResponse playerInfoResponse) {
 
     if (playerInfoResponse.isLogged) {
-      print('Welcome, ${playerInfoResponse.nickname}');
+      debugPrint('Welcome, ${playerInfoResponse.nickname}');
 
-      //TODO: salvare token reale ricevuto dal server
-      final token = playerInfoResponse.nickname;
 
       isAuthenticated = true;
       authState = AuthenticationState.authenticated;
       currentScreen = AppScreenState.mainMenu;
 
       mySelfPlayer = MySelfPlayer(playerInfoResponse.nickname);
-
-      //mySelfPlayer = MySelfPlayer(response.nickname);
-
-      //_storage.write(key: 'auth_token', value: token);
-
-      //_fetchPlayerInfo(token);
-
     } else {
-      print('Login failed');
+      debugPrint('Login failed');
       // FALLIMENTO!
       isAuthenticated = false;
       authState = AuthenticationState.error;
-      authError = "Login fallito. Prova un altro nome."; // Esempio
+      authError = "Login fallito.";
     }
   }
 
   void handleJoinGameResponse(JoinGameResponse joinGameResponse) {
     if (joinGameResponse.isJoined == true) {
-      print('${joinGameResponse.nickname} si è unito al gioco con successo.');
+      debugPrint('${joinGameResponse.nickname} si è unito al gioco con successo.');
       // Puoi aggiornare lo stato del gioco qui se necessario
     } else {
-      print('Unione al gioco fallita per ${joinGameResponse.nickname}.');
+      debugPrint('Unione al gioco fallita per ${joinGameResponse.nickname}.');
       // Gestisci l'errore di unione al gioco
     }
 
@@ -604,7 +463,7 @@ class ClientManager extends ChangeNotifier {
     for (var player in game!.players) {
       if (player.getNickname() == playerStateUpdate.nickname) {
         player.setPlayerState(playerStateUpdate.playerState);
-        print("Aggiornato stato di ${player.getNickname()} a ${playerStateUpdate.playerState}");
+        debugPrint("Aggiornato stato di ${player.getNickname()} a ${playerStateUpdate.playerState}");
         break;
       }
     }
@@ -623,7 +482,7 @@ class ClientManager extends ChangeNotifier {
 
   void handleStartingGame(StartingGame startingGame) {
 
-    print("STARTING a GAME !!!!!");
+    debugPrint("STARTING a GAME !!!!!");
     game = Game();
     //aggiungo altri player alla lista di giocatori nel game
     for(var playerNick in startingGame.connectedPlayers){
@@ -658,7 +517,7 @@ class ClientManager extends ChangeNotifier {
   void handleEndGame(EndGame endGame) {
 
     endGame.gameResult.forEach((nickname, score) {
-      print("Giocatore: $nickname, Punteggio finale: $score");
+      debugPrint("Giocatore: $nickname, Punteggio finale: $score");
       for(Player p in game!.players){
         if(p.getNickname() == nickname){
           p.setScore(score);

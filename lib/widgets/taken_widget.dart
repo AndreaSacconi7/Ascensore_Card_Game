@@ -3,18 +3,18 @@ import 'package:flutter/material.dart';
 class TakenWidget extends StatefulWidget {
   final ValueNotifier<int> roundsWonNotifier;
 
-  const TakenWidget({Key? key, required this.roundsWonNotifier}) : super(key: key);
+  const TakenWidget({super.key, required this.roundsWonNotifier});
 
   @override
-  _TakenWidgetState createState() => _TakenWidgetState();
+  State<TakenWidget> createState() => _TakenWidgetState();
 }
 
 class _TakenWidgetState extends State<TakenWidget> {
   @override
   Widget build(BuildContext context) {
 
-    final double buttonSize = 50.0;
-    final double buttonHeight = buttonSize;
+    const double buttonSize = 50.0;
+    const double buttonHeight = buttonSize;
 
     return ValueListenableBuilder<int>(
       valueListenable: widget.roundsWonNotifier,

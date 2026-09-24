@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:test_socket/widgets/ScoreWidget.dart';
-import 'package:test_socket/widgets/TakenWidget.dart';
-import '../model/Player.dart';
-import 'package:test_socket/widgets/BetWidget.dart';
+import 'package:ascensore_client/widgets/score_widget.dart';
+import 'package:ascensore_client/widgets/taken_widget.dart';
+import '../model/player.dart';
+import 'package:ascensore_client/widgets/bet_widget.dart';
 
 class MySelfBetTakenScoreWidget extends StatelessWidget {
   final Player player;
@@ -14,15 +14,8 @@ class MySelfBetTakenScoreWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Rimuoviamo la larghezza dello schermo, non ci serve
-    // final screenWidth = MediaQuery.of(context).size.width;
-
-    // --- SOLUZIONE ---
-    // Imposta una larghezza fissa.
-    // 140.0 è un esempio, modificalo tu per trovare la
-    // dimensione "giusta" che avevi su mobile.
-    final double widgetWidth = 140.0;
-    // --- FINE SOLUZIONE ---
+    // Larghezza fissa, indipendente dallo schermo
+    const double widgetWidth = 140.0;
 
     return SizedBox(
       width: widgetWidth, // Usa la larghezza fissa

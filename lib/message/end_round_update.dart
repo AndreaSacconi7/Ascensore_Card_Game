@@ -1,9 +1,7 @@
-import 'dart:collection';
 
-import 'package:test_socket/message/ExecutableInClient.dart';
-import 'package:test_socket/pages/PageInterface.dart';
+import 'package:ascensore_client/message/executable_in_client.dart';
 
-import '../ClientManager.dart';
+import '../client_manager.dart';
 
 class EndRoundUpdate implements ExecutableInClient {
 
@@ -13,7 +11,7 @@ class EndRoundUpdate implements ExecutableInClient {
   EndRoundUpdate.fromJson(Map<String, dynamic> json) :
         nextPlayerOrderAndTaken = (json['executable']['nextPlayerOrderAndTaken']
           as Map<String, dynamic>).map((key, value) => MapEntry(
-            key as String,
+            key,
             value as int,
         )),
         nextRoundNumber = json['executable']['nextRoundNumber'] as int;

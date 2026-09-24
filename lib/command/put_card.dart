@@ -1,6 +1,6 @@
-import 'package:test_socket/command/ExecutableInServer.dart';
+import 'package:ascensore_client/command/executable_in_server.dart';
 
-import '../model/Seed.dart';
+import '../model/seed.dart';
 
 class PutCard implements ExecutableInServer {
 

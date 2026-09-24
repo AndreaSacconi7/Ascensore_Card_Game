@@ -1,4 +1,4 @@
-import 'package:test_socket/command/ExecutableInServer.dart';
+import 'package:ascensore_client/command/executable_in_server.dart';
 
 class PlayerInfoRequest implements ExecutableInServer{
 

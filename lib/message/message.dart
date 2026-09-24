@@ -1,11 +1,8 @@
-import 'dart:convert';
 
-import 'package:test_socket/message/ExecutableInClient.dart';
-import 'package:test_socket/pages/PageInterface.dart';
+import 'package:ascensore_client/message/executable_in_client.dart';
 
-import '../ClientManager.dart';
-import '../ClientManagerOld.dart';
-import 'MessageType.dart';
+import '../client_manager.dart';
+import 'message_type.dart';
 
 class Message {
   final ExecutableInClient executable;
@@ -28,15 +25,6 @@ class Message {
       messageType: MessageType.values.firstWhere((e) => e.toString().split('.').last == json['messageType'], orElse: () => throw ArgumentError('Invalid messageType: ${json['messageType']}'),)
     );
   }
-
-  /*
-  // Convert to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'executable': executable.toJson(),
-      'nickName': nickName,
-    };
-  }*/
 
   Future<void> execute(ClientManager clientManager) async {
     executable.execute(clientManager: clientManager);

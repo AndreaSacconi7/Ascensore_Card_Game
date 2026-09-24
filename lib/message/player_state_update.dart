@@ -1,8 +1,7 @@
-import 'package:test_socket/message/ExecutableInClient.dart';
-import 'package:test_socket/model/PlayerState.dart';
-import 'package:test_socket/pages/PageInterface.dart';
+import 'package:ascensore_client/message/executable_in_client.dart';
+import 'package:ascensore_client/model/player_state.dart';
 
-import '../ClientManager.dart';
+import '../client_manager.dart';
 
 class PlayerStateUpdate implements ExecutableInClient {
 
@@ -13,7 +12,7 @@ class PlayerStateUpdate implements ExecutableInClient {
   PlayerStateUpdate(this.playerState, this.nickname);
 
   PlayerStateUpdate.fromJson(Map<String, dynamic> json) :
-        playerState = PlayerState.values.firstWhere((e) => e.toString() == 'PlayerState.' + json['executable']['playerState']),
+        playerState = PlayerState.values.firstWhere((e) => e.toString() == 'PlayerState.${json['executable']['playerState']}'),
         nickname = json['executable']['nickname'] as String;
 
   @override

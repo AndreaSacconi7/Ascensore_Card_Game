@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
-import 'package:test_socket/model/CardGame.dart';
-import 'package:test_socket/model/PlayerState.dart';
+import 'package:ascensore_client/model/card_game.dart';
+import 'package:ascensore_client/model/player_state.dart';
 
 class Player {
 
@@ -9,7 +9,6 @@ class Player {
   final ValueNotifier<int> scoreNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> betNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> roundsWonNotifier = ValueNotifier<int>(0);
-  //PlayerState state = PlayerState.WAITING;
   final ValueNotifier<CardGame?> playedCardNotifier = ValueNotifier<CardGame?>(null);
   PlayerState playerState = PlayerState.IDLE;
 

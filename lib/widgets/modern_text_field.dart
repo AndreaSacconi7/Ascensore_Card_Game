@@ -24,14 +24,14 @@ class ModernTextField extends StatelessWidget {
       decoration: InputDecoration(
         // Stile del testo "hint"
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
 
         // Icona a sinistra
-        prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+        prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
 
         // Sfondo del campo
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withValues(alpha: 0.1),
 
         // Bordi
         border: OutlineInputBorder(

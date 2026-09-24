@@ -1,6 +1,5 @@
-import '../ClientManager.dart';
-import '../pages/PageInterface.dart';
-import 'ExecutableInClient.dart';
+import '../client_manager.dart';
+import 'executable_in_client.dart';
 
 class EndSetUpdate implements ExecutableInClient {
 
@@ -10,7 +9,7 @@ class EndSetUpdate implements ExecutableInClient {
   EndSetUpdate.fromJson(Map<String, dynamic> json) :
         nextPlayerOrderAndScore = (json['executable']['nextPlayerOrderAndScore']
         as Map<String, dynamic>).map((key, value) => MapEntry(
-          key as String,
+          key,
           value as int,
         )),
         nextSetNumber = json['executable']['nextSetNumber'] as int;

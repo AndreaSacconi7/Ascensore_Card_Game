@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../ClientManager.dart';
-import '../model/CardGame.dart';
-import 'CardWidget.dart';
-// Assicurati di importare le definizioni di CardGame e CardWidget
-// import '...';
+import '../client_manager.dart';
+import '../model/card_game.dart';
+import 'card_widget.dart';
 
 class HandCards extends StatefulWidget {
-  // 1. Rimuovi clientManager dal costruttore.
-  // Lo prenderemo dal 'Provider'
-  const HandCards({Key? key}) : super(key: key);
+  const HandCards({super.key});
 
   @override
   State<HandCards> createState() => _HandCardsBarState();
@@ -17,35 +13,24 @@ class HandCards extends StatefulWidget {
 
 class _HandCardsBarState extends State<HandCards> {
   // Stato locale per la carta "sollevata" (hover)
-  // Questo è corretto, perché è uno stato della UI, non uno stato globale.
   int? _hoveredIndex;
 
   @override
   Widget build(BuildContext context) {
-    // 2. USA UN 'SELECTOR' PER ASCOLTARE SOLO LA MANO
-    // Questo widget si ricostruirà SOLO se la lista di carte cambia.
+    // Si ricostruisce solo quando cambia la mano
     return Selector<ClientManager, List<CardGame>>(
-      // 3. IL 'SELECTOR'
-      // Seleziona esattamente il dato che ci interessa.
-      // Usiamo 'mySelfPlayer?.handCards' come da tua logica
       selector: (context, clientManager) =>
       clientManager.mySelfPlayer?.handCards ?? [],
 
-      // 4. IL 'BUILDER'
-      // Riceve 'handCards' (la lista) direttamente.
       builder: (context, handCards, child) {
-        // 5. ORA INSERIAMO TUTTA LA TUA LOGICA DI LAYOUT
         return Container(
           height: 150, // Altezza della barra della mano
-          color: Colors.grey.withOpacity(0.1),
+          color: Colors.grey.withValues(alpha: 0.1),
           // Il padding del Container definisce il margine *esterno* principale.
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
 
-              // 6. LA MODIFICA CHIAVE:
-              // Non usiamo 'widget.clientManager', usiamo la variabile
-              // 'handCards' fornita dal builder del Selector.
               final totalCards = handCards.length;
 
               if (totalCards == 0) {
@@ -53,7 +38,6 @@ class _HandCardsBarState extends State<HandCards> {
               }
 
               // --- Inizio Logica di Posizionamento Migliorata ---
-              // (Questa è la tua logica, è corretta e la manteniamo)
 
               const cardWidth = 60.0;
               const cardHeight = 91.0; // Assumiamo un'altezza per il drag feedback
@@ -98,7 +82,7 @@ class _HandCardsBarState extends State<HandCards> {
                     (totalCardsWidthNoOverlap - playableWidth) / (totalCards - 1);
 
                 // Impediamo che le carte si sovrappongano completamente (lasciamo 20px visibili)
-                final maxOverlap = cardWidth - 20.0;
+                const maxOverlap = cardWidth - 20.0;
                 if (overlap > maxOverlap) {
                   overlap = maxOverlap;
                 }

@@ -1,8 +1,7 @@
-import 'package:test_socket/message/ExecutableInClient.dart';
-import 'package:test_socket/pages/PageInterface.dart';
+import 'package:ascensore_client/message/executable_in_client.dart';
 
-import '../ClientManager.dart';
-import '../model/CardGame.dart';
+import '../client_manager.dart';
+import '../model/card_game.dart';
 
 class HandUpdate implements ExecutableInClient {
 

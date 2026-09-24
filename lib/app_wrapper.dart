@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:test_socket/pages/GameOverScreen.dart';
-import 'package:test_socket/pages/GameScreen.dart';
-import 'package:test_socket/pages/LoadingScreen.dart';
-import 'package:test_socket/pages/LoginPage.dart';
-import 'package:test_socket/pages/MainMenuScreen.dart';
+import 'package:ascensore_client/pages/game_over_screen.dart';
+import 'package:ascensore_client/pages/game_screen.dart';
+import 'package:ascensore_client/pages/loading_screen.dart';
+import 'package:ascensore_client/pages/login_page.dart';
+import 'package:ascensore_client/pages/main_menu_screen.dart';
 
-import 'AppScreenState.dart';
-import 'ClientManager.dart';
+import 'app_screen_state.dart';
+import 'client_manager.dart';
 
 class AppWrapper extends StatelessWidget {
   const AppWrapper({super.key});
@@ -15,16 +15,15 @@ class AppWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    // 1. Usiamo Selector per ascoltare SOLO lo stato dello schermo
+    // Selector: ricostruisce solo quando cambia la schermata corrente
     return Selector<ClientManager, AppScreenState>(
       selector: (context, manager) => manager.currentScreen,
 
       builder: (context, currentScreen, child) {
 
-        print("AppWrapper: Stato cambiato in $currentScreen");
+        debugPrint("AppWrapper: Stato cambiato in $currentScreen");
 
-        // 2. Usiamo un 'switch' per decidere quale pagina mostrare
-        //    AnimatedSwitcher aggiunge una bella transizione
+        // AnimatedSwitcher aggiunge una transizione tra le pagine
         return AnimatedSwitcher(
           duration: const Duration(milliseconds: 300),
           child: _buildScreen(currentScreen),
@@ -33,32 +32,28 @@ class AppWrapper extends StatelessWidget {
     );
   }
 
-  // 3. Funzione di supporto per restituire la pagina corretta
   Widget _buildScreen(AppScreenState state) {
     switch (state) {
       case AppScreenState.loading:
       //Mostra uno spinner mentre controlla il token
-        return LoadingScreen(); // Sostituisci con la tua schermata di caricamento
+        return const LoadingScreen();
 
       case AppScreenState.login:
       // Mostra la pagina di login
-        return LoginPage(); // Sostituisci con la tua LoginPage
+        return const LoginPage();
 
       case AppScreenState.mainMenu:
       // Mostra il menu principale
-        return MainMenuScreen(); // Sostituisci con la tua MainMenuScreen
+        return const MainMenuScreen();
 
       case AppScreenState.inGame:
       // Mostra la pagina di gioco!
-        return GameScreen(); // Sostituisci con la tua pagina di gioco
+        return const GameScreen();
 
       case AppScreenState.gameOver:
       // Mostra la schermata di Game Over
-        return GameOverScreen(); // Sostituisci con la tua GameOverScreen
+        return const GameOverScreen();
 
-      default:
-      // Fallback
-        return LoginPage();
     }
   }
 }

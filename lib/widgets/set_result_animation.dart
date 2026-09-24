@@ -6,11 +6,11 @@ class SetResultAnimation extends StatefulWidget {
   final String? customText; // Opzionale
 
   const SetResultAnimation({
-    Key? key,
+    super.key,
     required this.onComplete,
     required this.isWin,
     this.customText,
-  }) : super(key: key);
+  });
 
   @override
   State<SetResultAnimation> createState() => _SetResultAnimationState();

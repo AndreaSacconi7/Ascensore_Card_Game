@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -18,8 +17,8 @@ class MenuButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // Colori per i bottoni
     final primaryColor = Colors.green[600]; // Verde per Start
-    final secondaryColor = Colors.white.withOpacity(0.15); // Grigio/Trasparente
-    final shadowColor = Colors.black.withOpacity(0.3);
+    final secondaryColor = Colors.white.withValues(alpha: 0.15); // Grigio/Trasparente
+    final shadowColor = Colors.black.withValues(alpha: 0.3);
 
     return SizedBox(
       width: 280, // Larghezza fissa per tutti i bottoni

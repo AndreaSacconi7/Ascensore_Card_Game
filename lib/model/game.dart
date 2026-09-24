@@ -1,5 +1,6 @@
-import 'package:test_socket/model/CardGame.dart';
-import 'package:test_socket/model/Player.dart';
+import 'package:flutter/foundation.dart';
+import 'package:ascensore_client/model/card_game.dart';
+import 'package:ascensore_client/model/player.dart';
 
 class Game {
 
@@ -25,7 +26,7 @@ class Game {
   void removePlayer(Player player) {
     for(Player pl in players) {
       if(pl.getNickname() == player.getNickname()) {
-        print('Rimuovo il giocatore ${pl.getNickname()}');
+        debugPrint('Rimuovo il giocatore ${pl.getNickname()}');
         players.remove(pl);
         break;
       }

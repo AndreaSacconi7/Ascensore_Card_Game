@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../model/CardGame.dart';
-import '../model/Seed.dart';
+import '../model/card_game.dart';
+import '../model/seed.dart';
 
 class PlayedCardWidget extends StatelessWidget {
   final ValueNotifier<CardGame?> playedCardNotifier;
@@ -20,21 +20,11 @@ class PlayedCardWidget extends StatelessWidget {
     return ValueListenableBuilder<CardGame?>(
       valueListenable: playedCardNotifier,
       builder: (context, playedCard, child) {
-        print('PlayedCardWidget rebuild: ${playedCard?.seed ?? "null"}');
+        debugPrint('PlayedCardWidget rebuild: ${playedCard?.seed ?? "null"}');
         if (playedCard == null || playedCard.getSeed() == Seed.VOID) {
           return SizedBox(
             width: width,
             height: height,
-            /*decoration: BoxDecoration(
-              color: Colors.grey,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                'No Card',
-                style: TextStyle(color: Colors.white),
-              ),
-            ),*/
           );
         }
 

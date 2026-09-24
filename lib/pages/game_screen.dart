@@ -1,31 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:test_socket/model/PlayerState.dart';
-import 'package:test_socket/model/SetResultAnimationState.dart';
+import 'package:ascensore_client/model/player_state.dart';
+import 'package:ascensore_client/model/set_result_animation_state.dart';
 
-import '../ClientManager.dart';
-import '../command/Command.dart';
-import '../command/CommandType.dart';
-import '../command/PutCard.dart';
-import '../command/SetBet.dart';
-import '../message/LoginResponse.dart';
-import '../model/CardGame.dart';
-import '../model/Game.dart';
-import '../model/Player.dart';
-import '../model/Seed.dart';
-import '../widgets/CardWidget.dart';
-import '../widgets/HandCards.dart';
-import '../widgets/MySelfTakenBetScore.dart';
-import '../widgets/PlayedCardWidget.dart';
-import '../widgets/PlayerWidget.dart';
-import '../widgets/SetResultAnimation.dart';
+import '../client_manager.dart';
+import '../command/command.dart';
+import '../command/command_type.dart';
+import '../command/put_card.dart';
+import '../command/set_bet.dart';
+import '../model/card_game.dart';
+import '../model/game.dart';
+import '../model/game_rules.dart';
+import '../model/player.dart';
+import '../widgets/card_widget.dart';
+import '../widgets/hand_cards.dart';
+import '../widgets/my_self_taken_bet_score.dart';
+import '../widgets/played_card_widget.dart';
+import '../widgets/player_widget.dart';
+import '../widgets/set_result_animation.dart';
 
 class GameScreen extends StatefulWidget {
   // NON riceve più ClientManager
   const GameScreen({super.key});
 
   @override
-  _GameScreenState createState() => _GameScreenState();
+  State<GameScreen> createState() => _GameScreenState();
 }
 
 class _GameScreenState extends State<GameScreen> {
@@ -35,7 +34,7 @@ class _GameScreenState extends State<GameScreen> {
 
   CardGame? droppedCard; // Questo è ok, è stato UI locale
 
-  // 2. Definisci i tuoi breakpoint (questi sono esempi comuni)
+  // Breakpoint per il layout responsive
   static const double tabletBreakpoint = 600.0;
   static const double desktopBreakpoint = 900.0;
 
@@ -74,9 +73,9 @@ class _GameScreenState extends State<GameScreen> {
   /// Questa funzione viene chiamata OGNI VOLTA che
   /// il ClientManager chiama notifyListeners()
   void _handleClientChanges() {
-    print("_handleClientChanges called in GameScreen");
-    print("Previous State: $_previousPlayerState");
-    print("Current State: ${_clientManager?.mySelfPlayer?.playerState}");
+    debugPrint("_handleClientChanges called in GameScreen");
+    debugPrint("Previous State: $_previousPlayerState");
+    debugPrint("Current State: ${_clientManager?.mySelfPlayer?.playerState}");
 
     if (!mounted) return; // Non fare nulla se la pagina è stata distrutta
 
@@ -131,15 +130,13 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Colleghiamo la pagina al ClientManager
     return Consumer<ClientManager>(
       builder: (context, manager, child) {
 
-        // 2. Prendiamo lo stato del gioco VERO dal manager
         final game = manager.game;
         final mySelfPlayer = manager.mySelfPlayer;
 
-        // 3. Se il gioco non è ancora stato caricato, mostra uno spinner
+        // Partita non ancora caricata: spinner
         if (game == null || mySelfPlayer == null) {
           return const Scaffold(
             body: Center(
@@ -155,8 +152,6 @@ class _GameScreenState extends State<GameScreen> {
           );
         }
 
-        // 4. Se i dati ci sono, costruisci la UI
-        // (Ho copiato il tuo layout 'Desktop' come principale)
         final double screenWidth = MediaQuery.of(context).size.width;
 
         if (screenWidth >= desktopBreakpoint) {
@@ -169,16 +164,16 @@ class _GameScreenState extends State<GameScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Spacer(flex: 2),
+                      const Spacer(flex: 2),
                       _buildPlayersRow(context, manager, game), // Passiamo
-                      Spacer(flex: 4),
+                      const Spacer(flex: 4),
                       _buildTopCardRow(context, manager, game), // Passiamo
-                      Spacer(flex: 3),
+                      const Spacer(flex: 3),
                       _buildMiddleRow(context, manager, game), // Passiamo
-                      Spacer(flex: 3),
+                      const Spacer(flex: 3),
                       _buildMySelfPlayedCardRowDesktop(context, manager, game), // Passiamo
-                      Spacer(flex: 3),
-                      Expanded(
+                      const Spacer(flex: 3),
+                      const Expanded(
                         flex: 15,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -203,17 +198,17 @@ class _GameScreenState extends State<GameScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Spacer(flex: 2),
+                      const Spacer(flex: 2),
                       _buildPlayersRow(context, manager, game), // Passiamo
-                      Spacer(flex: 4),
+                      const Spacer(flex: 4),
                       _buildTopCardRow(context, manager, game), // Passiamo
-                      Spacer(flex: 3),
+                      const Spacer(flex: 3),
                       _buildMiddleRow(context, manager, game), // Passiamo
-                      Spacer(flex: 3),
+                      const Spacer(flex: 3),
                       _buildMySelfPlayedCardRow(context, manager, game), // Passiamo
-                      Spacer(flex: 3),
+                      const Spacer(flex: 3),
                       _buildBetAndTakenRow(context, manager, game), // Passiamo
-                      Expanded(
+                      const Expanded(
                         flex: 15,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
@@ -232,11 +227,7 @@ class _GameScreenState extends State<GameScreen> {
                       child: SetResultAnimation(
                         // Passiamo true se è WIN, false se è LOSS
                         isWin: _uiAnimationState == SetResultAnimationState.win,
-                        onComplete: () {
-                          // Opzionale: puoi forzare il reset locale qui se vuoi
-                          // che sparisca prima dei 3 secondi del server
-                          // setState(() { _uiAnimationState = RoundResultEvent.none; });
-                        },
+                        onComplete: () {},
                       ),
                     ),
                   ),
@@ -267,7 +258,7 @@ class _GameScreenState extends State<GameScreen> {
                     player: player,
                   ))
                 .toList()
-          : [Text('No players available yet')],
+          : [const Text('No players available yet')],
     );
   }
 
@@ -287,7 +278,7 @@ class _GameScreenState extends State<GameScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [PlayedCardWidget(playedCardNotifier: topPlayer!.playedCardNotifier)],
     )
-        : SizedBox.shrink();
+        : const SizedBox.shrink();
   }
 
   Widget _buildMiddleRow(BuildContext context, ClientManager manager, Game game) {
@@ -295,9 +286,9 @@ class _GameScreenState extends State<GameScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _buildPlayerCard(context, manager, game, 1),
-        SizedBox(width: 60),
+        const SizedBox(width: 60),
         _buildBriscolaCard(context, manager, game),
-        SizedBox(width: 60),
+        const SizedBox(width: 60),
         _buildPlayerCard(context, manager, game, 2),
       ],
     );
@@ -319,7 +310,7 @@ class _GameScreenState extends State<GameScreen> {
     final mySelfPlayer = manager.mySelfPlayer;
     final Widget centeredWidget = mySelfPlayer?.playedCardNotifier.value != null
         ? PlayedCardWidget(playedCardNotifier: mySelfPlayer!.playedCardNotifier)
-        : SizedBox.shrink();
+        : const SizedBox.shrink();
 
     return Stack(
       children: [
@@ -338,13 +329,13 @@ class _GameScreenState extends State<GameScreen> {
     final player = opponents.length > playerIndex ? opponents[playerIndex] : null;
     return player?.playedCardNotifier.value != null && player?.nickname != manager.mySelfPlayer!.nickname
         ? PlayedCardWidget(playedCardNotifier: player!.playedCardNotifier)
-        : SizedBox.shrink();
+        : const SizedBox.shrink();
   }
 
   Widget _buildBriscolaCard(BuildContext context, ClientManager manager, Game game) {
     return game.briscola != null
         ? CardWidget(card: game.briscola!)
-        : SizedBox.shrink();
+        : const SizedBox.shrink();
   }
 
   void _showBetOverlay(BuildContext context, ClientManager manager, Game game) {
@@ -364,7 +355,7 @@ class _GameScreenState extends State<GameScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text('Set your bet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Slider(
                       value: sliderValue,
                       min: 0,
@@ -373,16 +364,13 @@ class _GameScreenState extends State<GameScreen> {
                       label: sliderValue.toStringAsFixed(0),
                       onChanged: (double value) => setState(() => sliderValue = value),
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
                         if (checkIfValidBet(context, manager, game, sliderValue.toInt())) {
                           Navigator.of(dialogContext).pop(); // Chiudi il dialog
 
-                          // NON aggiornare lo stato qui
-                          // manager.mySelfPlayer?.setBet(sliderValue.toInt());
-
-                          // INVIA IL COMANDO
+                          // Server-authoritative: lo stato si aggiorna solo alla risposta del server
                           SetBet setBetExecutable = SetBet(bet: sliderValue.toInt(), nickname: manager.mySelfPlayer!.getNickname());
                           Command command = Command(
                             commandType: CommandType.SET_BET,
@@ -394,7 +382,7 @@ class _GameScreenState extends State<GameScreen> {
                           showMessage('Invalid bet! Please choose a different value.');
                         }
                       },
-                      child: Text('Confirm'),
+                      child: const Text('Confirm'),
                     ),
                   ],
                 ),
@@ -422,11 +410,7 @@ class _GameScreenState extends State<GameScreen> {
           droppedCard = details.data; // Questo è ancora stato locale, ok
 
           if (_isValidPutCard(context, manager, game, droppedCard!)) {
-            // NON modificare lo stato locale
-            //manager.mySelfPlayer?.removeCardFromHand(droppedCard!);
-            //manager.mySelfPlayer?.setPlayedCard(droppedCard!);
-
-            // INVIA SOLO IL COMANDO
+            // Server-authoritative: la carta viene rimossa alla ricezione di PLAYED_CARD
             PutCard putCardExecutable = PutCard(
               droppedCard!.seed,
               droppedCard!.value,
@@ -441,12 +425,10 @@ class _GameScreenState extends State<GameScreen> {
           }
         },
         builder: (BuildContext context, List<CardGame?> candidateData, List<dynamic> rejectedData) {
-          return Container(
-            child: Center(
-              child: Text(
-                candidateData.isNotEmpty ? 'Drop here!' : '',
-                style: TextStyle(color: candidateData.isNotEmpty ? Colors.red : Colors.white),
-              ),
+          return Center(
+            child: Text(
+              candidateData.isNotEmpty ? 'Drop here!' : '',
+              style: TextStyle(color: candidateData.isNotEmpty ? Colors.red : Colors.white),
             ),
           );
         },
@@ -457,27 +439,23 @@ class _GameScreenState extends State<GameScreen> {
   // --- Metodi di logica/validazione ---
 
   bool _isValidPutCard(BuildContext context, ClientManager manager, Game game, CardGame card) {
-    if (manager.mySelfPlayer!.playerState != PlayerState.PUT) {
+    final me = manager.mySelfPlayer!;
+    if (me.playerState != PlayerState.PUT) {
       showMessage('You cannot play now, wait for your turn!');
       return false;
-    } else {
-      if (game.playerOrder[0].nickname == manager.mySelfPlayer!.nickname) {
-        return true;
-      } else if (game.playerOrder[0].playedCardNotifier.value == null || game.playerOrder[0].playedCardNotifier.value!.seed == card.seed) {
-        return true;
-      }
-      for (CardGame c in manager.mySelfPlayer!.handCards) {
-        if (c.seed == game.playerOrder[0].playedCardNotifier.value!.seed && c != card) {
-          showMessage('You must play a card of the same seed as the first played card!');
-          return false;
-        }
-      }
+    }
+    final leader = game.playerOrder[0];
+    if (leader.nickname == me.nickname) {
       return true;
     }
+    if (!GameRules.isValidCard(leadCard: leader.playedCardNotifier.value, hand: me.handCards, card: card)) {
+      showMessage('You must play a card of the same seed as the first played card!');
+      return false;
+    }
+    return true;
   }
 
   void showMessage(String message) {
-    // Assicurati che il context sia valido
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -487,17 +465,12 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   bool checkIfValidBet(BuildContext context, ClientManager manager, Game game, int bet) {
-    int totalBets = bet;
-    if (game.playerOrder[game.playerOrder.length - 1].nickname != manager.mySelfPlayer!.getNickname()) {
-      return true;
-    }
-    for (Player p in game.playerOrder) {
-      totalBets += p.getBet();
-    }
-    if (totalBets == game.getSet()) {
-      return false;
-    }
-    return true;
+    return GameRules.isValidBet(
+      playerOrder: game.playerOrder,
+      myNickname: manager.mySelfPlayer!.getNickname(),
+      bet: bet,
+      cardsInHand: game.getSet(),
+    );
   }
 
 }

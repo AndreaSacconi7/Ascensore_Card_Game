@@ -1,11 +1,11 @@
 {
-    "name": "test_socket",
-    "short_name": "test_socket",
+    "name": "Ascensore",
+    "short_name": "Ascensore",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Real-time multiplayer client for Ascensore, an Italian card game.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

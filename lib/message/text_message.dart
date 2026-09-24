@@ -1,6 +1,5 @@
-import '../ClientManager.dart';
-import '../pages/PageInterface.dart';
-import 'ExecutableInClient.dart';
+import '../client_manager.dart';
+import 'executable_in_client.dart';
 
 class TextMessage implements ExecutableInClient {
 

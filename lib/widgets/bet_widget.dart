@@ -7,16 +7,9 @@ class BetWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Rimuoviamo i calcoli basati sulla percentuale dello schermo
-    // final screenWidth = MediaQuery.of(context).size.width;
-    // final playerWidgetWidth = screenWidth * 0.3; // 30% of screen width
-
-    // --- SOLUZIONE ---
-    // Imposta una dimensione fissa.
-    // 50.0 è un esempio, aggiustalo tu se serve.
-    final double buttonSize = 50.0;
-    final double buttonHeight = buttonSize;
-    // --- FINE SOLUZIONE ---
+    // Dimensione fissa, indipendente dallo schermo
+    const double buttonSize = 50.0;
+    const double buttonHeight = buttonSize;
 
     return ValueListenableBuilder<int>(
       valueListenable: betNotifier,

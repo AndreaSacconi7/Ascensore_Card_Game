@@ -1,6 +1,6 @@
-import 'package:test_socket/model/CardGame.dart';
+import 'package:ascensore_client/model/card_game.dart';
 
-import 'Player.dart';
+import 'player.dart';
 
 class MySelfPlayer extends Player{
 

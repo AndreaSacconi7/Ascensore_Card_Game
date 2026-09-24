@@ -1,8 +1,6 @@
-import 'dart:convert';
 
-import 'package:test_socket/ClientManager.dart';
-import 'package:test_socket/message/ExecutableInClient.dart';
-import 'package:test_socket/pages/PageInterface.dart';
+import 'package:ascensore_client/client_manager.dart';
+import 'package:ascensore_client/message/executable_in_client.dart';
 
 class LoginResponse implements ExecutableInClient {
   final bool isLogged;
@@ -24,7 +22,7 @@ class LoginResponse implements ExecutableInClient {
 
   @override
   void execute({required ClientManager clientManager}) {
-      //clientManager.handleLoginResponse(this);
+      // Login gestito tramite Supabase + PLAYER_INFO_RESPONSE
   }
 
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../ClientManager.dart';
+import '../client_manager.dart';
 
 import 'package:provider/provider.dart';
 
-import '../model/Player.dart';
+import '../model/player.dart';
 
 class GameOverScreen extends StatelessWidget {
   const GameOverScreen({super.key});
@@ -13,18 +13,10 @@ class GameOverScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ClientManager>(
       builder: (context, clientManager, child) {
-        // 1. Recuperiamo i giocatori dal manager
-        // Assumo che clientManager abbia una lista 'players' o simile nel gameState
-        // Se i tuoi oggetti giocatore sono complessi, qui puoi mapparli.
-        //final playersList = clientManager.game!.players;
-
-        // 2. Ordiniamo i giocatori per punteggio (decrescente)
-        // Creiamo una copia per non modificare l'ordine nel manager se non voluto
-        //final sortedPlayers = List.from(playersList);
-        //sortedPlayers.sort((a, b) => b.scoreNotifier.compareTo(a.scoreNotifier));
+        // Classifica finale per punteggio (decrescente)
         final sortedPlayers = _sortPlayersByScore(clientManager.game!.players);
 
-        // 3. Determiniamo chi sono io e se ho vinto
+        // Determina se ho vinto
         final mySelf = clientManager.mySelfPlayer;
 
         // Il vincitore è il primo della lista ordinata
@@ -187,7 +179,7 @@ class GameOverScreen extends StatelessWidget {
 
               // Punteggio
               Text(
-                "${player.getScore()} pt", // Assicurati che abbia .score
+                "${player.getScore()} pt",
                 style: TextStyle(
                   fontSize: isFirst ? 20 : 16,
                   fontWeight: FontWeight.bold,

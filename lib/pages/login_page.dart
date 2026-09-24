@@ -1,20 +1,11 @@
-import 'dart:async'; // Importato per Future
+// Importato per Future
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Importato per il token
+// Importato per il token
 import 'package:provider/provider.dart';
-import 'package:test_socket/ClientManagerOld.dart';
-import 'package:test_socket/message/LoginResponse.dart';
-import 'package:test_socket/pages/MainMenuScreen.dart';
-import '../AuthenticationState.dart';
-import '../ClientManager.dart';
-import '../command/Command.dart';
-import '../command/CommandType.dart';
-import '../command/LoginRequest.dart';
-import '../model/MySelfPlayer.dart';
-import '../widgets/MenuButton2.0.dart';
-import '../widgets/ModernTextField.dart';
-import 'HomePageOld.dart';
-import 'MainMenuScreen.dart';
+import '../authentication_state.dart';
+import '../client_manager.dart';
+import '../widgets/menu_button_v2.dart';
+import '../widgets/modern_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -25,7 +16,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   // Controller per i vari campi
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -42,7 +32,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -71,25 +60,6 @@ class _LoginPageState extends State<LoginPage> {
       // Chiama il metodo di Registrazione nel manager
       manager.signUpWithEmail(email, password);
     }
-  }
-
-  void _loginAsGuest(BuildContext context) {
-    final username = _usernameController.text.trim();
-    if (username.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Inserisci uno username per l'ospite")),
-      );
-      return;
-    }
-    Provider.of<ClientManager>(context, listen: false).loginAsGuest(username);
-  }
-
-  void _loginWithGoogle() {
-    Provider.of<ClientManager>(context, listen: false).loginWithGoogle();
-  }
-
-  void _loginWithApple() {
-    Provider.of<ClientManager>(context, listen: false).loginWithApple();
   }
 
   @override
@@ -176,58 +146,10 @@ class _LoginPageState extends State<LoginPage> {
                           _isLoginMode
                               ? "Non hai un account? Registrati"
                               : "Hai già un account? Accedi",
-                          style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
                         ),
                       ),
 
-                      const SizedBox(height: 20),
-                      _buildDivider("SOCIAL"),
-                      const SizedBox(height: 20),
-
-                      // --- SEZIONE SOCIAL ---
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Usiamo versioni più piccole o icone se preferisci,
-                          // altrimenti mantieni i MenuButton full width
-                          Expanded(
-                            child: MenuButton(
-                              text: "Google",
-                              onPressed: _loginWithGoogle,
-                              isPrimary: false,
-                              icon: Icons.g_mobiledata,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: MenuButton(
-                              text: "Apple",
-                              onPressed: _loginWithApple,
-                              isPrimary: false,
-                              icon: Icons.apple,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 30),
-                      _buildDivider("OPPURE"),
-                      const SizedBox(height: 30),
-
-                      // --- SEZIONE OSPITE ---
-                      ModernTextField(
-                        controller: _usernameController,
-                        hintText: "Nickname (Ospite)",
-                        icon: Icons.person_outline,
-                      ),
-                      const SizedBox(height: 16),
-                      MenuButton(
-                        text: "ENTRA COME OSPITE",
-                        onPressed: manager.authState == AuthenticationState.loading
-                            ? null
-                            : () => _loginAsGuest(context),
-                        isPrimary: false, // Meno enfasi sull'ospite ora
-                      ),
                     ],
                   ),
                 ),
@@ -236,22 +158,6 @@ class _LoginPageState extends State<LoginPage> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildDivider(String text) {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            text,
-            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
-          ),
-        ),
-        Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
-      ],
     );
   }
 

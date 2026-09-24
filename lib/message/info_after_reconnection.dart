@@ -1,5 +1,5 @@
-import 'package:test_socket/ClientManager.dart';
-import 'package:test_socket/message/ExecutableInClient.dart';
+import 'package:ascensore_client/client_manager.dart';
+import 'package:ascensore_client/message/executable_in_client.dart';
 
 class InfoAfterReconnection implements ExecutableInClient{
 
@@ -10,17 +10,17 @@ class InfoAfterReconnection implements ExecutableInClient{
   InfoAfterReconnection.fromJson(Map<String, dynamic> json) :
         scores = (json['executable']['scores']
         as Map<String, dynamic>).map((key, value) => MapEntry(
-          key as String,
+          key,
           value as int,
         )),
         bets = (json['executable']['bets']
         as Map<String, dynamic>).map((key, value) => MapEntry(
-          key as String,
+          key,
           value as int,
         )),
         roundsWon = (json['executable']['roundsWon']
         as Map<String, dynamic>).map((key, value) => MapEntry(
-          key as String,
+          key,
           value as int,
         ));
 

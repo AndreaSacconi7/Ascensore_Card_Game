@@ -1,5 +1,5 @@
-import '../ClientManager.dart';
-import 'ExecutableInClient.dart';
+import '../client_manager.dart';
+import 'executable_in_client.dart';
 
 class EndGame implements ExecutableInClient {
 
@@ -8,7 +8,7 @@ class EndGame implements ExecutableInClient {
   EndGame.fromJson(Map<String, dynamic> json) :
         gameResult = (json['executable']['gameResult']
         as Map<String, dynamic>).map((key, value) => MapEntry(
-          key as String,
+          key,
           value as int,
         ));
 

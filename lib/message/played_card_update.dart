@@ -1,8 +1,7 @@
-import 'package:test_socket/ClientManager.dart';
-import 'package:test_socket/message/ExecutableInClient.dart';
+import 'package:ascensore_client/client_manager.dart';
+import 'package:ascensore_client/message/executable_in_client.dart';
 
-import '../model/CardGame.dart';
-import '../pages/PageInterface.dart';
+import '../model/card_game.dart';
 
 class PlayedCardUpdate implements ExecutableInClient {
 

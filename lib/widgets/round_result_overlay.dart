@@ -14,10 +14,10 @@ class RoundResultOverlay extends StatefulWidget {
   final VoidCallback onComplete;
 
   const RoundResultOverlay({
-    Key? key,
+    super.key,
     required this.isWinner,
     required this.onComplete,
-  }) : super(key: key);
+  });
 
   @override
   State<RoundResultOverlay> createState() => _RoundResultOverlayState();
@@ -74,7 +74,7 @@ class _RoundResultOverlayState extends State<RoundResultOverlay> {
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
                 shape: BoxShape.circle,
                 border: Border.all(color: iconColor, width: 3),
               ),

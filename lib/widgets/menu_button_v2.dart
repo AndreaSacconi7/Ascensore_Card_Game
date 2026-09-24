@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Un bottone personalizzato per il menu, basato sul tuo stile.
+/// Bottone del menu con icona opzionale.
 class MenuButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
@@ -34,10 +34,10 @@ class MenuButton extends StatelessWidget {
     )
     // Stile Secondario (trasparente con bordo)
         : OutlinedButton.styleFrom(
-      foregroundColor: Colors.white.withOpacity(0.9),
+      foregroundColor: Colors.white.withValues(alpha: 0.9),
       padding: const EdgeInsets.symmetric(vertical: 20),
       side: BorderSide(
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withValues(alpha: 0.3),
         width: 2,
       ),
       shape: RoundedRectangleBorder(

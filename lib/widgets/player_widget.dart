@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:test_socket/widgets/ScoreWidget.dart';
-import 'package:test_socket/widgets/TakenWidget.dart';
-import '../model/Player.dart';
-import 'BetWidget.dart';
+import 'package:ascensore_client/widgets/score_widget.dart';
+import 'package:ascensore_client/widgets/taken_widget.dart';
+import '../model/player.dart';
+import 'bet_widget.dart';
 
 class PlayerWidget extends StatelessWidget {
   final String name;
@@ -18,20 +18,9 @@ class PlayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen width and height
-    // NON ABBIAMO PIÙ BISOGNO DI MEDIASCREEN
-    // final screenWidth = MediaQuery.of(context).size.width;
-    // final screenHeight = MediaQuery.of(context).size.height;
-
-    // --- SOLUZIONE ---
-    // Imposta una larghezza fissa invece di una percentuale.
-    // 120.0 è un esempio, modificalo finché non trovi la dimensione
-    // che preferisci e che corrisponde a quella mobile.
-    final double widgetWidth = 120.0;
-    // --- FINE SOLUZIONE ---
-
-    // Questo calcolo ora userà la larghezza fissa (120.0 * 0.4)
-    final avatarSize = widgetWidth * 0.4;
+    // Larghezza fissa, indipendente dallo schermo
+    const double widgetWidth = 120.0;
+    const avatarSize = widgetWidth * 0.4;
 
     return SizedBox(
       width: widgetWidth, // Usa la larghezza fissa
@@ -56,12 +45,10 @@ class PlayerWidget extends StatelessWidget {
             width: avatarSize,
             height: avatarSize,
             decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/cards/yoga.png'),
-                fit: BoxFit.cover,
-              ),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
+            child: const Icon(Icons.person, color: Colors.white, size: avatarSize * 0.7),
           ),
           const SizedBox(height: 15),
           Row(

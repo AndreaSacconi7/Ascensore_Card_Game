@@ -1,4 +1,4 @@
-import 'package:test_socket/model/Seed.dart';
+import 'package:ascensore_client/model/seed.dart';
 
 class CardGame {
 
@@ -8,16 +8,8 @@ class CardGame {
   CardGame(this.seed, this.value);
 
   CardGame.fromJson(Map<String, dynamic> json) :
-        seed = Seed.values.firstWhere((e) => e.toString() == 'Seed.' + json['seed']),
+        seed = Seed.values.firstWhere((e) => e.toString() == 'Seed.${json['seed']}'),
         value = json['value'] as int;
-
-  /*
-  Map<String, dynamic> toJson() {
-    return {
-      'seed': seed.toString().split('.').last,
-      'value': value,
-    };
-  }*/
 
   Seed getSeed() {
     return seed;
@@ -27,7 +19,7 @@ class CardGame {
     return value;
   }
 
-  //otterrò il path all'immagine della carta tramite seed e value (es: "assets/cards/SWORDS_4.png")
+  // Path dell'immagine della carta tramite seed e value (es: "assets/cards/SWORDS_4.png")
   String getImagePath() {
     return 'assets/cards/${seed.toString().split('.').last}_$value.png';
   }
