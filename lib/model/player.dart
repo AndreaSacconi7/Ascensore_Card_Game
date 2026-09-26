@@ -11,6 +11,9 @@ class Player {
   final ValueNotifier<CardGame?> playedCardNotifier = ValueNotifier<CardGame?>(null);
   PlayerState playerState = PlayerState.IDLE;
 
+  /// A computer opponent in an offline match.
+  bool isBot = false;
+
   /// Whether this player has already bet in the current set (a bet of 0 is still a bet).
   bool hasBet = false;
 

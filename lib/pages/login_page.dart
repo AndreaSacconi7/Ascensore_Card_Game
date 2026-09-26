@@ -6,6 +6,7 @@ import '../client_manager.dart';
 import '../ui/components.dart';
 import '../ui/game_widgets.dart';
 import '../ui/theme.dart';
+import 'offline_sheet.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -151,6 +152,13 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(height: 12),
+                AppButton(
+                  label: 'Gioca offline contro i bot',
+                  icon: Icons.smart_toy_rounded,
+                  style: AppButtonStyle.ghost,
+                  onPressed: () => showOfflineSheet(context),
                 ),
               ],
             ),

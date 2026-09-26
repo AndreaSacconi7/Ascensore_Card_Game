@@ -55,7 +55,8 @@ class _AppWrapperState extends State<AppWrapper> {
   @override
   Widget build(BuildContext context) {
     final screen = context.select<ClientManager, AppScreenState>((m) => m.currentScreen);
-    final linkState = context.select<ClientManager, LinkState>((m) => m.linkState);
+    // Offline matches do not need the connection, so its state is not shown during them
+    final linkState = context.select<ClientManager, LinkState>((m) => m.isOffline ? LinkState.connected : m.linkState);
 
     return Scaffold(
       backgroundColor: AppColors.background,

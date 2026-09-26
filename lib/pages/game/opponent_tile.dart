@@ -37,6 +37,7 @@ class OpponentTile extends StatelessWidget {
             faded: left,
             turnDeadline: player.turnDeadline,
             turnLength: player.turnLength,
+            bot: player.isBot,
           ),
           const SizedBox(height: 6),
           Text(

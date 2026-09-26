@@ -5,6 +5,7 @@ import '../client_manager.dart';
 import '../ui/components.dart';
 import '../ui/game_widgets.dart';
 import '../ui/theme.dart';
+import 'offline_sheet.dart';
 import 'rules_sheet.dart';
 
 class MainMenuScreen extends StatefulWidget {
@@ -16,6 +17,8 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   late int _players = context.read<ClientManager>().matchSize;
+  late int _bots = context.read<ClientManager>().offlineBots;
+  bool _offline = false;
 
   @override
   Widget build(BuildContext context) {
@@ -73,32 +76,42 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                         const StatChip(icon: Icons.layers_rounded, value: '19 mani', color: AppColors.gold),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        for (final players in const [2, 3, 4]) ...[
-                          if (players > 2) const SizedBox(width: 10),
-                          Expanded(
-                            child: _PlayersOption(
-                              players: players,
-                              selected: _players == players,
-                              onTap: () => setState(() => _players = players),
+                    const SizedBox(height: 12),
+                    _ModeSwitch(offline: _offline, onChanged: (offline) => setState(() => _offline = offline)),
+                    const SizedBox(height: 12),
+                    if (_offline)
+                      BotCountSelector(value: _bots, onChanged: (bots) => setState(() => _bots = bots))
+                    else
+                      Row(
+                        children: [
+                          for (final players in const [2, 3, 4]) ...[
+                            if (players > 2) const SizedBox(width: 10),
+                            Expanded(
+                              child: CountOption(
+                                count: players,
+                                label: 'giocatori',
+                                icon: Icons.person_rounded,
+                                selected: _players == players,
+                                onTap: () => setState(() => _players = players),
+                              ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
-                    ),
+                      ),
                     const SizedBox(height: 12),
                     Text(
-                      'La partita parte quando ci sono $_players giocatori.',
+                      _offline
+                          ? 'Contro il computer, anche senza connessione.'
+                          : 'La partita parte quando ci sono $_players giocatori.',
                       textAlign: TextAlign.center,
                       style: textTheme.bodyMedium?.copyWith(fontSize: 13),
                     ),
                     const SizedBox(height: 16),
                     AppButton(
                       label: 'GIOCA',
-                      icon: Icons.play_arrow_rounded,
-                      onPressed: () => manager.joinGame(players: _players),
+                      icon: _offline ? Icons.smart_toy_rounded : Icons.play_arrow_rounded,
+                      onPressed: () =>
+                          _offline ? manager.playOffline(bots: _bots) : manager.joinGame(players: _players),
                     ),
                   ],
                 ),
@@ -118,40 +131,48 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 }
 
-/// One match size to choose from, drawn as that many little players.
-class _PlayersOption extends StatelessWidget {
-  final int players;
-  final bool selected;
-  final VoidCallback onTap;
+/// Online against other players, or offline against the computer.
+class _ModeSwitch extends StatelessWidget {
+  final bool offline;
+  final ValueChanged<bool> onChanged;
 
-  const _PlayersOption({required this.players, required this.selected, required this.onTap});
+  const _ModeSwitch({required this.offline, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.gold : AppColors.textSecondary;
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: 'Partita a $players giocatori',
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        children: [
+          _segment('Online', Icons.public_rounded, !offline, () => onChanged(false)),
+          _segment('Contro i bot', Icons.smart_toy_rounded, offline, () => onChanged(true)),
+        ],
+      ),
+    );
+  }
+
+  Widget _segment(String label, IconData icon, bool selected, VoidCallback onTap) {
+    final color = selected ? AppColors.textPrimary : AppColors.textMuted;
+    return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? AppColors.gold.withValues(alpha: 0.14) : AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.medium),
-            border: Border.all(color: selected ? AppColors.gold : AppColors.border, width: selected ? 1.6 : 1),
+            color: selected ? AppColors.surfaceStrong : Colors.transparent,
+            borderRadius: BorderRadius.circular(100),
           ),
-          child: Column(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [for (var i = 0; i < players; i++) Icon(Icons.person_rounded, size: 16, color: color)],
-              ),
-              const SizedBox(height: 4),
-              Text('$players', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
-              Text('giocatori', style: TextStyle(fontSize: 11, color: color)),
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
+              Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: color)),
             ],
           ),
         ),

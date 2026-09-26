@@ -3,7 +3,7 @@
 //   flutter build web -t tool/design_preview.dart -o /tmp/preview
 //   open <served preview>/?s=play
 //
-// Scenarios: login, nickname, menu, waiting, bet, bet10, play, left, trick, peak, setresult, gameover, replaced, reconnecting.
+// Scenarios: login, nickname, menu, waiting, bet, bet10, play, left, trick, peak, setresult, gameover, offline, replaced, reconnecting.
 import 'dart:async';
 
 import 'package:ascensore_client/app.dart';
@@ -183,6 +183,10 @@ Future<void> main() async {
       await send('END_GAME', {
         'gameResult': {'andrea': 180, 'carol': 150, 'bob': 90}
       });
+    case 'offline':
+      // A real offline match: the local engine and three bots play, the human is on turn in a moment
+      await login();
+      manager.playOffline(bots: 3);
     case 'replaced':
       await start(['bob', 'andrea'], setsPlayed: 2, handSize: 3);
       await send('SESSION_REPLACED');

@@ -77,15 +77,15 @@ class GameOverScreen extends StatelessWidget {
               AppButton(
                 label: 'GIOCA ANCORA',
                 icon: Icons.replay_rounded,
-                onPressed: () {
-                  // Same match size as the one just played
-                  manager
-                    ..backToMenu()
-                    ..joinGame(players: ranking.length);
-                },
+                // Same kind of match: online with the same size, or offline with the same bots
+                onPressed: manager.playAgain,
               ),
               const SizedBox(height: 12),
-              AppButton(label: 'Torna al menu', style: AppButtonStyle.secondary, onPressed: manager.backToMenu),
+              AppButton(
+                label: manager.isGuest ? 'Esci' : 'Torna al menu',
+                style: AppButtonStyle.secondary,
+                onPressed: manager.backToMenu,
+              ),
             ],
           ),
         ),
@@ -121,7 +121,7 @@ class _RankingRow extends StatelessWidget {
                 : Icon(Icons.workspace_premium_rounded, color: medal),
           ),
           const SizedBox(width: 8),
-          PlayerAvatar(nickname: player.nickname, size: 34, faded: left),
+          PlayerAvatar(nickname: player.nickname, size: 34, faded: left, bot: player.isBot),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

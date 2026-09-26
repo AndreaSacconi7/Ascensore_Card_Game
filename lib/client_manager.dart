@@ -33,6 +33,7 @@ import 'model/player.dart';
 import 'model/player_state.dart';
 import 'model/set_result_animation_state.dart';
 import 'network/game_connection.dart';
+import 'offline/local_match.dart';
 import 'network/server_link.dart';
 
 /// Client state and the only entry point to the server.
@@ -51,7 +52,7 @@ class ClientManager extends ChangeNotifier {
     _link = ServerLink(
       connector: connector,
       onConnected: _identify,
-      onMessage: _onServerText,
+      onMessage: _onLinkText,
       onStateChanged: _onLinkStateChanged,
       heartbeatMessage: Command.ping().toJson(),
       heartbeatInterval: heartbeatInterval,
@@ -94,6 +95,21 @@ class ClientManager extends ChangeNotifier {
 
   /// Who is waiting in your match before it starts; null outside matchmaking.
   WaitingRoom? waitingRoom;
+
+  /// Computer opponents chosen last for an offline match (1 to 3).
+  int offlineBots = 1;
+
+  static const botNames = ['Gino', 'Pina', 'Tonio', 'Rita'];
+
+  // The offline match in progress, if any: commands go to it instead of the server
+  LocalMatch? _offline;
+  Set<String> _offlineBotNames = const {};
+  bool _lastMatchOffline = false;
+
+  bool get isOffline => _offline != null;
+
+  /// Playing without an account (offline only).
+  bool get isGuest => authState != AuthenticationState.authenticated;
 
   // --- Internals ---
 
@@ -201,18 +217,52 @@ class ClientManager extends ChangeNotifier {
 
   /// Enters matchmaking for a match of [players] (the last chosen size if omitted).
   void joinGame({int? players}) {
+    _lastMatchOffline = false;
     matchSize = players ?? matchSize;
     final me = mySelfPlayer?.nickname;
     waitingRoom = WaitingRoom(playersPerMatch: matchSize, players: [if (me != null) me]);
     currentScreen = AppScreenState.inGame;
     notifyListeners();
-    _link.send(Command.joinGame(matchSize).toJson());
+    _send(Command.joinGame(matchSize).toJson());
+  }
+
+  /// Starts a match against [bots] computer opponents on this device: no server, and no account needed.
+  void playOffline({int? bots}) {
+    offlineBots = (bots ?? offlineBots).clamp(1, 3);
+    _lastMatchOffline = true;
+    _resetMatch();
+    final me = (mySelfPlayer ??= MySelfPlayer('Tu')).nickname;
+    final names = botNames.where((name) => name != me).take(offlineBots).toList();
+    _offlineBotNames = names.toSet();
+    late final LocalMatch match;
+    match = LocalMatch(
+      human: me,
+      botNames: names,
+      // Messages from a match that has since been closed are dropped
+      onMessage: (json) {
+        if (identical(_offline, match)) _onServerText(json);
+      },
+    );
+    _offline = match;
+    currentScreen = AppScreenState.inGame;
+    notifyListeners();
+    match.start();
+  }
+
+  /// Another match like the one just finished: online with the same size, or offline with the same bots.
+  void playAgain() {
+    if (_lastMatchOffline) {
+      playOffline();
+    } else {
+      backToMenu();
+      joinGame();
+    }
   }
 
   /// Leaves matchmaking, or the match in progress for good, and goes back to the menu.
   void leaveGame() {
     final leftMatch = game != null;
-    _link.send(Command.leaveGame().toJson());
+    _send(Command.leaveGame().toJson());
     backToMenu();
     if (leftMatch) {
       serverNotice = 'Hai abbandonato la partita.';
@@ -221,15 +271,26 @@ class ClientManager extends ChangeNotifier {
   }
 
   /// State changes only when the server confirms with SETTED_BET.
-  void setBet(int bet) => _link.send(Command.setBet(bet).toJson());
+  void setBet(int bet) => _send(Command.setBet(bet).toJson());
 
   /// The card leaves the hand only when the server confirms with PLAYED_CARD.
-  void putCard(CardGame card) => _link.send(Command.putCard(card).toJson());
+  void putCard(CardGame card) => _send(Command.putCard(card).toJson());
 
   void backToMenu() {
     _resetMatch();
-    currentScreen = AppScreenState.mainMenu;
+    // A guest who played offline goes back to the login page
+    currentScreen = isGuest ? AppScreenState.login : AppScreenState.mainMenu;
     notifyListeners();
+  }
+
+  // Game commands go to the offline match when one is in progress, otherwise to the server
+  void _send(String command) {
+    final offline = _offline;
+    if (offline != null) {
+      offline.receive(command);
+    } else {
+      _link.send(command);
+    }
   }
 
   /// Returns the pending notice and clears it.
@@ -243,9 +304,14 @@ class ClientManager extends ChangeNotifier {
   // Connection and message queue
   // ------------------------------------------------------------------
 
+  // While an offline match is in progress the server's messages are ignored: its state is not ours now
+  void _onLinkText(String raw) {
+    if (_offline == null) _onServerText(raw);
+  }
+
   void _onLinkStateChanged(LinkState state) {
     linkState = state;
-    if (state == LinkState.reconnecting) {
+    if (state == LinkState.reconnecting && _offline == null) {
       // The server replays the full table state after reconnecting: queued updates are stale
       _pauseTimer?.cancel();
       _pauseTimer = null;
@@ -294,6 +360,8 @@ class ClientManager extends ChangeNotifier {
 
   // Leaving the match from the UI: also drops queued messages and any pending pause
   void _resetMatch() {
+    _offline?.dispose();
+    _offline = null;
     _pauseTimer?.cancel();
     _pauseTimer = null;
     _inbox.clear();
@@ -367,8 +435,10 @@ class ClientManager extends ChangeNotifier {
       ..hasBet = false
       ..roundsWon = 0
       ..playedCard = null;
-    final players =
-        message.connectedPlayers.map((nickname) => nickname == me.nickname ? me : Player(nickname)).toList();
+    final players = message.connectedPlayers
+        .map((nickname) =>
+            nickname == me.nickname ? me : (Player(nickname)..isBot = _offlineBotNames.contains(nickname)))
+        .toList();
     game = Game(players, maxHandSize: message.maxHandSize);
     waitingRoom = null;
     currentScreen = AppScreenState.inGame;
@@ -551,6 +621,7 @@ class ClientManager extends ChangeNotifier {
 
   @override
   void dispose() {
+    _offline?.dispose();
     _pauseTimer?.cancel();
     unawaited(_link.close());
     super.dispose();

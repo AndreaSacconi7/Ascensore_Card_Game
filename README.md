@@ -19,6 +19,9 @@ At the start of every set each player **bets exactly how many tricks they will t
 - **Real-time multiplayer** over a persistent WebSocket connection; runs on Android, iOS and the web
 - **Authentication with Supabase** (email/password, PKCE flow); the access token is sent to the game server, which verifies it independently
 - **2, 3 or 4 players** — pick the match size in the menu; a waiting room shows who has joined and the free seats, and you can leave the queue
+- **Offline against bots** — 1 to 3 computer opponents, no connection or account needed: a local engine with the same rules speaks the server's protocol, so the whole client (state, queue, screens) runs unchanged
+- **Turn timer** — a ring around the player on turn empties as their time runs out (red in the last 10 s); when it expires the server plays for them
+- **One device per account** — opening the game elsewhere disconnects this device, which then offers to play here again
 - **Leave at any time** — after a confirmation; the others play on without you (with two players, the other one wins)
 - **Public nicknames** — players choose a unique nickname on first login; the email address is never shown to other players
 - **Automatic login** — the session is restored and refreshed on app start
@@ -50,7 +53,8 @@ flowchart LR
 ```
 
 - **Ordered message queue** — server messages are applied strictly in arrival order. After a trick or a set the queue pauses for a few seconds so players can see the cards; messages that arrive meanwhile wait instead of being applied early or out of order, and logging out cancels the pause cleanly.
-- **Connection is not session** — `ServerLink` owns the socket and reconnects with backoff when it drops; every new connection identifies the player again, which is also how the server resumes a match. Only an explicit logout (or a refused token) signs the player out.
+- **Connection is not session** — `ServerLink` owns the socket and reconnects with backoff when it drops; every new connection identifies the player again, which is also how the server resumes a match. A heartbeat detects connections that died without notice. Only an explicit logout (or a refused token) signs the player out.
+- **Offline engine** — `lib/offline/local_match.dart` runs a match on the device and `bot.dart` plays the computer opponents (bet from the likely tricks in hand; win cheaply when a trick is needed, otherwise dump strong cards that lose). `ClientManager` sends commands to it instead of the server; tests play complete 19-set matches against 1, 2 and 3 bots.
 - **Command / message protocol** — the client sends intentions (`SET_BET`, `PUT_CARD`, …) with no player name in them (the server knows who is on the socket); every server event is decoded by a registry in `server_message.dart` into a class that applies itself to the state. The wire format is documented in the server repository (`docs/protocol.md`).
 - **Testable seams** — the socket (`GameConnection`) and Supabase (`AuthService`) sit behind interfaces, so `ClientManager` is tested with fakes in fake time: login and nicknames, trick and set pauses, reconnection mid-match, logout during a pause.
 - **Contract test against the real server** — `test/fixtures/real_match.jsonl` holds every message the real server sent to two players during a full match, including a dropped connection and the reconnection; both players' clients replay it and must end on the server's final scores.
@@ -61,7 +65,8 @@ flowchart LR
 lib/
 ├── ui/        # theme and shared components
 ├── auth/      # AuthService (Supabase)
-├── network/   # GameConnection (WebSocket), ServerLink (reconnection)
+├── network/   # GameConnection (WebSocket), ServerLink (reconnection, heartbeat)
+├── offline/   # local match engine and bots
 ├── command/   # client → server commands
 ├── message/   # server → client messages and their decoders
 ├── model/     # game state, players, cards, rules
@@ -87,7 +92,7 @@ flutter test
 flutter run -d chrome -t tool/design_preview.dart
 ```
 
-Pick a screen with the `s` query parameter: `?s=login`, `nickname`, `menu`, `waiting`, `bet`, `bet10`, `play`, `left`, `trick`, `peak`, `setresult`, `gameover`, `reconnecting`.
+Pick a screen with the `s` query parameter: `?s=login`, `nickname`, `menu`, `waiting`, `bet`, `bet10`, `play`, `left`, `trick`, `peak`, `setresult`, `gameover`, `offline`, `replaced`, `reconnecting`.
 
 ## Known limitations
 

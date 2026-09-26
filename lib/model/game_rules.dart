@@ -19,6 +19,13 @@ class GameRules {
     return !hand.any((c) => c.seed == leadCard.seed);
   }
 
+  /// Cards dealt to each player in the set with the given 0-based index: 1, 2, ..., max, ..., 2, 1.
+  static int handSize(int setIndex, int maxHandSize) =>
+      setIndex < maxHandSize ? setIndex + 1 : 2 * maxHandSize - 1 - setIndex;
+
+  /// Points for one set: an exact bet scores 10 plus 10 per trick, a missed bet loses 10 per trick of difference.
+  static int setScore(int bet, int tricksWon) => bet == tricksWon ? 10 * bet + 10 : -10 * (tricksWon - bet).abs();
+
   /// Strength within a seed: ace, then three, then king (10) down to two.
   static int strength(CardGame card) => switch (card.value) { 1 => 12, 3 => 11, _ => card.value };
 

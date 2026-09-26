@@ -17,6 +17,9 @@ class PlayerAvatar extends StatefulWidget {
   final DateTime? turnDeadline;
   final Duration? turnLength;
 
+  /// A computer opponent: a robot instead of initials.
+  final bool bot;
+
   const PlayerAvatar({
     super.key,
     required this.nickname,
@@ -25,6 +28,7 @@ class PlayerAvatar extends StatefulWidget {
     this.faded = false,
     this.turnDeadline,
     this.turnLength,
+    this.bot = false,
   });
 
   static const _gradients = [
@@ -110,14 +114,16 @@ class _PlayerAvatarState extends State<PlayerAvatar> with SingleTickerProviderSt
             gradient: LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight),
           ),
           child: Center(
-            child: Text(
-              initials,
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: widget.size * 0.42,
-              ),
-            ),
+            child: widget.bot
+                ? Icon(Icons.smart_toy_rounded, color: Colors.white, size: widget.size * 0.55)
+                : Text(
+                    initials,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: widget.size * 0.42,
+                    ),
+                  ),
           ),
         ),
       ),
