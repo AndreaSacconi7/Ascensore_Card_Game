@@ -29,7 +29,12 @@ void main() {
     test('$player\'s client follows the whole match to the same final scores', () {
       fakeAsync((async) {
         final connector = FakeConnector();
-        final manager = ClientManager(auth: FakeAuthService(token: 'token'), connector: connector.call);
+        // No heartbeat: the recorded server never answers pings
+        final manager = ClientManager(
+          auth: FakeAuthService(token: 'token'),
+          connector: connector.call,
+          heartbeatInterval: const Duration(days: 1),
+        );
         manager.checkLoginStatus();
         async.flushMicrotasks();
 

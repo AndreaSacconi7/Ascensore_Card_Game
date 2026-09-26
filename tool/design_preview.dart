@@ -3,7 +3,7 @@
 //   flutter build web -t tool/design_preview.dart -o /tmp/preview
 //   open <served preview>/?s=play
 //
-// Scenarios: login, nickname, menu, waiting, bet, bet10, play, left, trick, peak, setresult, gameover, reconnecting.
+// Scenarios: login, nickname, menu, waiting, bet, bet10, play, left, trick, peak, setresult, gameover, replaced, reconnecting.
 import 'dart:async';
 
 import 'package:ascensore_client/app.dart';
@@ -82,7 +82,8 @@ Future<void> main() async {
       await send('BRISCOLA_UPDATE', {'briscolaCard': card('COINS', 7)});
       await send('SETTED_BET', {'nickname': 'bob', 'bet': 1});
       await send('SETTED_BET', {'nickname': 'carol', 'bet': 1});
-      await send('PLAYER_STATE_UPDATE', {'nickname': 'andrea', 'playerState': 'BET'});
+      await send('PLAYER_STATE_UPDATE',
+          {'nickname': 'andrea', 'playerState': 'BET', 'turnMillisLeft': 21000, 'turnMillis': 30000});
     case 'play':
       // Fifth set with four players: Carol and Dave have played, you must follow cups
       await start(['carol', 'dave', 'andrea', 'bob'],
@@ -96,7 +97,9 @@ Future<void> main() async {
       }
       await send('PLAYED_CARD', {'nickname': 'carol', 'playedCard': card('CUPS', 10)});
       await send('PLAYED_CARD', {'nickname': 'dave', 'playedCard': card('CUPS', 2)});
-      await send('PLAYER_STATE_UPDATE', {'nickname': 'andrea', 'playerState': 'PUT'});
+      // Eight seconds left of thirty: the countdown is in its red, final part
+      await send('PLAYER_STATE_UPDATE',
+          {'nickname': 'andrea', 'playerState': 'PUT', 'turnMillisLeft': 8000, 'turnMillis': 30000});
     case 'trick':
       // Two players: the trick is complete and stays on the table, highlighting the winner
       await start(['bob', 'andrea'], setsPlayed: 3, handSize: 4, points: {'bob': 20, 'andrea': 30});
@@ -180,6 +183,9 @@ Future<void> main() async {
       await send('END_GAME', {
         'gameResult': {'andrea': 180, 'carol': 150, 'bob': 90}
       });
+    case 'replaced':
+      await start(['bob', 'andrea'], setsPlayed: 2, handSize: 3);
+      await send('SESSION_REPLACED');
     case 'reconnecting':
       await start(['bob', 'andrea'], setsPlayed: 2, handSize: 3);
       await send('HAND_UPDATE', {

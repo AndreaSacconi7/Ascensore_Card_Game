@@ -14,6 +14,10 @@ class Player {
   /// Whether this player has already bet in the current set (a bet of 0 is still a bet).
   bool hasBet = false;
 
+  /// While it is this player's turn: when it runs out, and how long a full turn is. Null without a limit.
+  DateTime? turnDeadline;
+  Duration? turnLength;
+
   Player(this.nickname);
 
   int get score => scoreNotifier.value;

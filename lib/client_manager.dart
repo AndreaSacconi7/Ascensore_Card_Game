@@ -20,6 +20,7 @@ import 'message/player_exit_game.dart';
 import 'message/player_info_response.dart';
 import 'message/player_state_update.dart';
 import 'message/server_message.dart';
+import 'message/session_replaced.dart';
 import 'message/setted_bet_update.dart';
 import 'message/starting_game.dart';
 import 'message/text_message.dart';
@@ -45,12 +46,15 @@ class ClientManager extends ChangeNotifier {
     required GameConnector connector,
     this.resultDisplayTime = const Duration(seconds: 3),
     List<Duration>? reconnectBackoff,
+    Duration heartbeatInterval = const Duration(seconds: 10),
   }) : _auth = auth {
     _link = ServerLink(
       connector: connector,
       onConnected: _identify,
       onMessage: _onServerText,
       onStateChanged: _onLinkStateChanged,
+      heartbeatMessage: Command.ping().toJson(),
+      heartbeatInterval: heartbeatInterval,
       backoff: reconnectBackoff ?? ServerLink.defaultBackoff,
     );
   }
@@ -379,7 +383,37 @@ class ClientManager extends ChangeNotifier {
   }
 
   void handlePlayerStateUpdate(PlayerStateUpdate message) {
-    game?.playerNamed(message.nickname)?.playerState = message.playerState;
+    final player = game?.playerNamed(message.nickname);
+    if (player == null) return;
+    player.playerState = message.playerState;
+    final onTurn = message.playerState == PlayerState.BET || message.playerState == PlayerState.PUT;
+    if (onTurn && message.turnLeft > Duration.zero) {
+      player
+        ..turnDeadline = message.receivedAt.add(message.turnLeft)
+        ..turnLength = message.turnLength;
+    } else {
+      player
+        ..turnDeadline = null
+        ..turnLength = null;
+    }
+  }
+
+  /// The account logged in on another device and the server closed this connection. Reconnecting on our
+  /// own would take the session back and the two devices would keep replacing each other, so the link
+  /// stays closed until the player chooses to play here again.
+  void handleSessionReplaced(SessionReplaced message) {
+    _clearMatchState();
+    waitingRoom = null;
+    currentScreen = AppScreenState.sessionReplaced;
+    unawaited(_link.close());
+  }
+
+  /// Takes the session back from the other device.
+  void playHere() {
+    authState = AuthenticationState.loading;
+    currentScreen = AppScreenState.login;
+    notifyListeners();
+    _link.open();
   }
 
   void handleSettedBet(SettedBetUpdate message) {
@@ -471,10 +505,17 @@ class ClientManager extends ChangeNotifier {
   }
 
   /// The player is out for good: the server has taken their card off the table and out of the turn order.
+  /// If it is you, the server took you out after too many turns ran out.
   void handlePlayerExitGame(PlayerExitGame message) {
     final game = this.game;
     final player = game?.playerNamed(message.nickname);
     if (game == null || player == null) return;
+    if (player == mySelfPlayer) {
+      _clearMatchState();
+      currentScreen = AppScreenState.mainMenu;
+      serverNotice = 'Sei stato tolto dalla partita: il tuo tempo è scaduto troppe volte.';
+      return;
+    }
     player
       ..playerState = PlayerState.EXIT
       ..playedCard = null;

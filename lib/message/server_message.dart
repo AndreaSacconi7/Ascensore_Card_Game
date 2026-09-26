@@ -12,6 +12,8 @@ import 'played_card_update.dart';
 import 'player_exit_game.dart';
 import 'player_info_response.dart';
 import 'player_state_update.dart';
+import 'pong.dart';
+import 'session_replaced.dart';
 import 'setted_bet_update.dart';
 import 'starting_game.dart';
 import 'text_message.dart';
@@ -22,6 +24,8 @@ typedef _Decoder = ExecutableInClient Function(Map<String, dynamic> executable);
 /// Decoders for every server message, keyed by messageType. See the server's docs/protocol.md.
 final Map<String, _Decoder> _decoders = {
   'PLAYER_INFO_RESPONSE': PlayerInfoResponse.fromJson,
+  'SESSION_REPLACED': SessionReplaced.fromJson,
+  'PONG': Pong.fromJson,
   'JOIN_GAME_RESPONSE': JoinGameResponse.fromJson,
   'WAITING_ROOM_UPDATE': WaitingRoomUpdate.fromJson,
   'STARTING_GAME': StartingGame.fromJson,

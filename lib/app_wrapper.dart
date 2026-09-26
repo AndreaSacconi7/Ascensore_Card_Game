@@ -8,6 +8,7 @@ import 'package:ascensore_client/pages/game_screen.dart';
 import 'package:ascensore_client/pages/loading_screen.dart';
 import 'package:ascensore_client/pages/login_page.dart';
 import 'package:ascensore_client/pages/main_menu_screen.dart';
+import 'package:ascensore_client/pages/session_replaced_page.dart';
 
 import 'app_screen_state.dart';
 import 'client_manager.dart';
@@ -85,6 +86,8 @@ class _AppWrapperState extends State<AppWrapper> {
         return const MainMenuScreen();
       case AppScreenState.inGame:
         return const GameScreen();
+      case AppScreenState.sessionReplaced:
+        return const SessionReplacedPage();
       case AppScreenState.gameOver:
         return const GameOverScreen();
     }

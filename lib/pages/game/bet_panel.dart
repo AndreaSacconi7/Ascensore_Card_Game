@@ -4,6 +4,7 @@ import '../../model/game.dart';
 import '../../model/game_rules.dart';
 import '../../model/player.dart';
 import '../../ui/components.dart';
+import '../../ui/countdown.dart';
 import '../../ui/theme.dart';
 
 /// Your bet, placed on the table itself so your hand stays in view below it.
@@ -56,17 +57,26 @@ class _BetPanelState extends State<BetPanel> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(text: 'Quante prese farai?', style: TextStyle(fontWeight: FontWeight.w800)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text.rich(
                   TextSpan(
-                    text: '  ${handSize == 1 ? '1 carta' : '$handSize carte'}',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    children: [
+                      const TextSpan(text: 'Quante prese farai?', style: TextStyle(fontWeight: FontWeight.w800)),
+                      TextSpan(
+                        text: '  ${handSize == 1 ? '1 carta' : '$handSize carte'}',
+                        style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                      ),
+                    ],
                   ),
+                  style: const TextStyle(fontSize: 16),
+                ),
+                if (widget.me.turnDeadline != null) ...[
+                  const SizedBox(width: 10),
+                  CountdownText(deadline: widget.me.turnDeadline!),
                 ],
-              ),
-              style: const TextStyle(fontSize: 16),
+              ],
             ),
             const SizedBox(height: 10),
             Wrap(

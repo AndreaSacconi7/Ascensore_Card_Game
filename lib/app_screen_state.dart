@@ -4,5 +4,6 @@ enum AppScreenState {
   chooseNickname,
   mainMenu,
   inGame,
+  sessionReplaced,
   gameOver,
 }

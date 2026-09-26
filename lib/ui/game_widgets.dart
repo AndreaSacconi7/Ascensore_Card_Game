@@ -1,15 +1,21 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../model/card_game.dart';
+import 'countdown.dart';
 import '../model/seed.dart';
 import 'theme.dart';
 
-/// Round avatar with the player's initials. [active] adds a pulsing gold ring: it is their turn.
+/// Round avatar with the player's initials. [active] adds a pulsing gold ring: it is their turn. With a
+/// [turnDeadline], the ring is a countdown that empties as the time runs out, turning red at the end.
 class PlayerAvatar extends StatefulWidget {
   final String nickname;
   final double size;
   final bool active;
   final bool faded;
+  final DateTime? turnDeadline;
+  final Duration? turnLength;
 
   const PlayerAvatar({
     super.key,
@@ -17,6 +23,8 @@ class PlayerAvatar extends StatefulWidget {
     this.size = 48,
     this.active = false,
     this.faded = false,
+    this.turnDeadline,
+    this.turnLength,
   });
 
   static const _gradients = [
@@ -69,21 +77,29 @@ class _PlayerAvatarState extends State<PlayerAvatar> with SingleTickerProviderSt
       animation: _pulse,
       builder: (context, child) {
         final glow = widget.active ? 6 + 10 * _pulse.value : 0.0;
-        return Container(
-          width: widget.size + 8,
-          height: widget.size + 8,
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: widget.active ? AppColors.gold : Colors.transparent,
-              width: 2,
+        final deadline = widget.turnDeadline;
+        final length = widget.turnLength;
+        final countdown = widget.active && deadline != null && length != null;
+        final hurry = countdown && secondsLeft(deadline) <= hurrySeconds;
+        final ringColor = hurry ? AppColors.danger : AppColors.gold;
+        return CustomPaint(
+          foregroundPainter: countdown ? _CountdownRing(turnFractionLeft(deadline, length), ringColor) : null,
+          child: Container(
+            width: widget.size + 8,
+            height: widget.size + 8,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: widget.active && !countdown ? AppColors.gold : Colors.transparent,
+                width: 2,
+              ),
+              boxShadow: [
+                if (widget.active) BoxShadow(color: ringColor.withValues(alpha: 0.45), blurRadius: glow),
+              ],
             ),
-            boxShadow: [
-              if (widget.active) BoxShadow(color: AppColors.gold.withValues(alpha: 0.45), blurRadius: glow),
-            ],
+            child: child,
           ),
-          child: child,
         );
       },
       child: Opacity(
@@ -107,6 +123,33 @@ class _PlayerAvatarState extends State<PlayerAvatar> with SingleTickerProviderSt
       ),
     );
   }
+}
+
+/// The turn countdown around an avatar: a full circle that empties clockwise from the top.
+class _CountdownRing extends CustomPainter {
+  final double fraction;
+  final Color color;
+
+  _CountdownRing(this.fraction, this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final track = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..color = Colors.white.withValues(alpha: 0.12);
+    final arc = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.round
+      ..color = color;
+    canvas.drawArc(rect.deflate(1.5), 0, 2 * math.pi, false, track);
+    canvas.drawArc(rect.deflate(1.5), -math.pi / 2, 2 * math.pi * fraction, false, arc);
+  }
+
+  @override
+  bool shouldRepaint(_CountdownRing old) => old.fraction != fraction || old.color != color;
 }
 
 /// A card of the Italian deck with rounded corners and a soft shadow.

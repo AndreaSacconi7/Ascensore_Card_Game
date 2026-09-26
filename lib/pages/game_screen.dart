@@ -133,7 +133,13 @@ class _Table extends StatelessWidget {
             radius: AppRadius.medium,
             child: Row(
               children: [
-                PlayerAvatar(nickname: me.nickname, size: 34, active: isOnTurn(me)),
+                PlayerAvatar(
+                  nickname: me.nickname,
+                  size: 34,
+                  active: isOnTurn(me),
+                  turnDeadline: me.turnDeadline,
+                  turnLength: me.turnLength,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

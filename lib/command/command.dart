@@ -25,5 +25,8 @@ class Command {
 
   factory Command.logout() => const Command._('LOGOUT');
 
+  /// Heartbeat; the server answers with PONG.
+  factory Command.ping() => const Command._('PING');
+
   String toJson() => jsonEncode({'commandType': commandType, 'executable': executable});
 }

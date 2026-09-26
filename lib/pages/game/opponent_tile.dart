@@ -35,6 +35,8 @@ class OpponentTile extends StatelessWidget {
             size: 34,
             active: state == PlayerState.BET || state == PlayerState.PUT,
             faded: left,
+            turnDeadline: player.turnDeadline,
+            turnLength: player.turnLength,
           ),
           const SizedBox(height: 6),
           Text(

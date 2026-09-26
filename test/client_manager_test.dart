@@ -328,6 +328,76 @@ void main() {
             }));
   });
 
+  group('turns and sessions', () {
+    test(
+        'a turn with a time limit gets a deadline',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'PLAYER_STATE_UPDATE',
+                  {'nickname': 'alice', 'playerState': 'BET', 'turnMillisLeft': 30000, 'turnMillis': 30000});
+
+              final alice = manager.game!.playerNamed('alice')!;
+              expect(alice.turnDeadline, isNotNull);
+              expect(alice.turnLength, const Duration(seconds: 30));
+
+              server(async, 'PLAYER_STATE_UPDATE', {'nickname': 'alice', 'playerState': 'WAIT'});
+              expect(alice.turnDeadline, isNull);
+            }));
+
+    test(
+        'being taken out of the match for inactivity returns to the menu',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'PLAYER_EXIT_GAME', {'nickname': 'alice'});
+
+              expect(manager.currentScreen, AppScreenState.mainMenu);
+              expect(manager.game, isNull);
+              expect(manager.consumeNotice(), isNotNull);
+            }));
+
+    test(
+        'a session replaced by another device stays closed until the player plays here',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'SESSION_REPLACED');
+              connector.last.drop();
+              async.flushMicrotasks();
+
+              expect(manager.currentScreen, AppScreenState.sessionReplaced);
+              async.elapse(const Duration(seconds: 30));
+              expect(connector.connections, hasLength(1), reason: 'no automatic reconnection');
+
+              manager.playHere();
+              async.flushMicrotasks();
+              expect(connector.connections, hasLength(2));
+              expect(connector.last.sentTypes, ['PLAYER_INFO_REQUEST']);
+            }));
+
+    test(
+        'the heartbeat pings the server while connected',
+        () => run((async) {
+              manager.checkLoginStatus();
+              async.flushMicrotasks();
+              loggedIn(async, 'alice');
+
+              async.elapse(const Duration(seconds: 10));
+              expect(connector.last.sentTypes.last, 'PING');
+            }));
+
+    test(
+        'a server that stops answering is treated as a dropped connection',
+        () => run((async) {
+              manager.checkLoginStatus();
+              async.flushMicrotasks();
+              loggedIn(async, 'alice');
+
+              // Pings go unanswered: after two silent intervals the link reconnects
+              async.elapse(const Duration(seconds: 31));
+
+              expect(connector.connections.length, greaterThan(1));
+            }));
+  });
+
   group('connection loss', () {
     test(
         'a dropped connection reconnects and resumes the match',
