@@ -97,6 +97,7 @@ class AppButton extends StatelessWidget {
   final AppButtonStyle style;
   final bool loading;
   final bool expand;
+  final double height;
 
   const AppButton({
     super.key,
@@ -106,6 +107,7 @@ class AppButton extends StatelessWidget {
     this.style = AppButtonStyle.primary,
     this.loading = false,
     this.expand = true,
+    this.height = 56,
   });
 
   @override
@@ -126,7 +128,12 @@ class AppButton extends StatelessWidget {
               if (icon != null) ...[Icon(icon, size: 20, color: foreground), const SizedBox(width: 10)],
               Text(
                 label,
-                style: TextStyle(color: foreground, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.6),
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: height < 50 ? 14 : 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                ),
               ),
             ],
           );
@@ -158,10 +165,10 @@ class AppButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(100),
             onTap: enabled ? onPressed : null,
             child: SizedBox(
-              height: 56,
+              height: height,
               width: expand ? double.infinity : null,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: height < 50 ? 18 : 24),
                 child: Center(child: content),
               ),
             ),

@@ -18,13 +18,14 @@ At the start of every set each player **bets exactly how many tricks they will t
 
 - **Real-time multiplayer** over a persistent WebSocket connection; runs on Android, iOS and the web
 - **Authentication with Supabase** (email/password, PKCE flow); the access token is sent to the game server, which verifies it independently
+- **2, 3 or 4 players** — pick the match size in the menu; a waiting room shows who has joined and the free seats, and you can leave the queue
 - **Public nicknames** — players choose a unique nickname on first login; the email address is never shown to other players
 - **Automatic login** — the session is restored and refreshed on app start
 - **Reconnection** — a dropped connection is retried with backoff while a banner shows the state; the server keeps the seat for 60 seconds and replays the table (hand, briscola, bets, tricks, cards on the table, whose turn it is)
 - **Server-authoritative state** — the client never changes game state optimistically; it validates moves locally for instant feedback (must follow suit, last-bidder constraint) and applies only what the server confirms
 - **Elevator floor indicator** — the current hand size with its direction of travel and the set number (e.g. *5 ▲, 5/19*)
 - Tap-to-lift or drag-and-drop cards; cards you may not play (you must follow the lead seed) are dimmed
-- Betting sheet that crosses out the one bet the last player may not make
+- Betting happens on the table itself, with your hand in view below; the one bet the last player may not make is crossed out
 - The trick winner's card glows before the table is cleared; points won or lost pop up at the end of each set
 - Rules sheet in-app; responsive layout for phones, tablets and desktop browsers
 
@@ -85,7 +86,7 @@ flutter test
 flutter run -d chrome -t tool/design_preview.dart
 ```
 
-Pick a screen with the `s` query parameter: `?s=login`, `nickname`, `menu`, `waiting`, `bet`, `play`, `trick`, `peak`, `setresult`, `gameover`, `reconnecting`.
+Pick a screen with the `s` query parameter: `?s=login`, `nickname`, `menu`, `waiting`, `bet`, `bet10`, `play`, `trick`, `peak`, `setresult`, `gameover`, `reconnecting`.
 
 ## Known limitations
 

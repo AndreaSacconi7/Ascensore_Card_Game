@@ -18,7 +18,11 @@ void main() {
   test('every message type the server sends has a decoder', () {
     const samples = {
       'PLAYER_INFO_RESPONSE': {'nickname': 'alice', 'isLogged': true, 'needsNickname': false, 'inMatch': false},
-      'JOIN_GAME_RESPONSE': {'nickname': 'alice', 'isJoined': true},
+      'JOIN_GAME_RESPONSE': {'nickname': 'alice', 'isJoined': true, 'playersPerMatch': 3},
+      'WAITING_ROOM_UPDATE': {
+        'playersPerMatch': 3,
+        'players': ['alice'],
+      },
       'STARTING_GAME': {
         'connectedPlayers': ['alice', 'bob']
       },

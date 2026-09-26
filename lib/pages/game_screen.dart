@@ -11,7 +11,7 @@ import '../model/set_result_animation_state.dart';
 import '../ui/components.dart';
 import '../ui/game_widgets.dart';
 import '../ui/theme.dart';
-import 'game/bet_sheet.dart';
+import 'game/bet_panel.dart';
 import 'game/game_top_bar.dart';
 import 'game/hand_fan.dart';
 import 'game/opponent_tile.dart';
@@ -21,53 +21,8 @@ import 'game/status_pill.dart';
 import 'game/table_view.dart';
 import 'game/waiting_view.dart';
 
-class GameScreen extends StatefulWidget {
+class GameScreen extends StatelessWidget {
   const GameScreen({super.key});
-
-  @override
-  State<GameScreen> createState() => _GameScreenState();
-}
-
-class _GameScreenState extends State<GameScreen> {
-  ClientManager? _manager;
-  bool _betSheetOpen = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final manager = context.read<ClientManager>();
-    if (manager != _manager) {
-      _manager?.removeListener(_onManagerChanged);
-      _manager = manager..addListener(_onManagerChanged);
-      // The player may already be betting, e.g. right after a reconnection
-      WidgetsBinding.instance.addPostFrameCallback((_) => _onManagerChanged());
-    }
-  }
-
-  @override
-  void dispose() {
-    _manager?.removeListener(_onManagerChanged);
-    super.dispose();
-  }
-
-  // The bet sheet opens when it is your turn to bet and closes if the turn moves on without you
-  void _onManagerChanged() {
-    if (!mounted) return;
-    final manager = _manager!;
-    final me = manager.mySelfPlayer;
-    final game = manager.game;
-    if (me == null || game == null) return;
-
-    if (me.playerState == PlayerState.BET && !_betSheetOpen) {
-      _betSheetOpen = true;
-      showBetSheet(context, game: game, me: me).then((bet) {
-        _betSheetOpen = false;
-        if (bet != null) manager.setBet(bet);
-      });
-    } else if (me.playerState != PlayerState.BET && _betSheetOpen) {
-      Navigator.of(context).pop();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,11 +113,18 @@ class _Table extends StatelessWidget {
               opponents: opponents,
               canDrop: (card) => _canPlay && _isPlayable(card),
               onDrop: manager.putCard,
+              // Betting happens on the empty table, so your hand stays visible below
+              overlay: me.playerState == PlayerState.BET
+                  ? BetPanel(key: ValueKey('bet-${game.setNumber}'), game: game, me: me, onBet: manager.setBet)
+                  : null,
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        StatusPill(game: game, me: me),
+        // While you bet, the panel on the table already says so: give the table the room instead
+        if (me.playerState != PlayerState.BET) ...[
+          const SizedBox(height: 12),
+          StatusPill(game: game, me: me),
+        ],
         const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),

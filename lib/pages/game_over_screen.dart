@@ -78,9 +78,10 @@ class GameOverScreen extends StatelessWidget {
                 label: 'GIOCA ANCORA',
                 icon: Icons.replay_rounded,
                 onPressed: () {
+                  // Same match size as the one just played
                   manager
                     ..backToMenu()
-                    ..joinGame();
+                    ..joinGame(players: ranking.length);
                 },
               ),
               const SizedBox(height: 12),

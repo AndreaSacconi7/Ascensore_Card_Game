@@ -23,6 +23,7 @@ import 'message/server_message.dart';
 import 'message/setted_bet_update.dart';
 import 'message/starting_game.dart';
 import 'message/text_message.dart';
+import 'message/waiting_room_update.dart';
 import 'model/card_game.dart';
 import 'model/game.dart';
 import 'model/game_rules.dart';
@@ -83,6 +84,12 @@ class ClientManager extends ChangeNotifier {
 
   /// One-off message for the game screen (a rejected move, a player leaving); cleared when shown.
   String? serverNotice;
+
+  /// Match size the player picked last (2 to 4), also used by "play again".
+  int matchSize = 2;
+
+  /// Who is waiting in your match before it starts; null outside matchmaking.
+  WaitingRoom? waitingRoom;
 
   // --- Internals ---
 
@@ -188,10 +195,20 @@ class ClientManager extends ChangeNotifier {
   // Moves
   // ------------------------------------------------------------------
 
-  void joinGame() {
+  /// Enters matchmaking for a match of [players] (the last chosen size if omitted).
+  void joinGame({int? players}) {
+    matchSize = players ?? matchSize;
+    final me = mySelfPlayer?.nickname;
+    waitingRoom = WaitingRoom(playersPerMatch: matchSize, players: [if (me != null) me]);
     currentScreen = AppScreenState.inGame;
     notifyListeners();
-    _link.send(Command.joinGame().toJson());
+    _link.send(Command.joinGame(matchSize).toJson());
+  }
+
+  /// Leaves matchmaking and goes back to the menu.
+  void leaveQueue() {
+    _link.send(Command.leaveGame().toJson());
+    backToMenu();
   }
 
   /// State changes only when the server confirms with SETTED_BET.
@@ -273,6 +290,7 @@ class ClientManager extends ChangeNotifier {
     _inbox.clear();
     _clearMatchState();
     serverNotice = null;
+    waitingRoom = null;
   }
 
   // Safe inside a message handler: never touches the queue, which may hold the messages that follow
@@ -317,8 +335,17 @@ class ClientManager extends ChangeNotifier {
   void handleJoinGameResponse(JoinGameResponse response) {
     if (!response.isJoined) {
       serverNotice = 'Impossibile entrare in partita, riprova.';
+      waitingRoom = null;
       currentScreen = AppScreenState.mainMenu;
+      return;
     }
+    matchSize = response.playersPerMatch;
+  }
+
+  void handleWaitingRoomUpdate(WaitingRoomUpdate update) {
+    // Late updates after the match started (or after leaving) are ignored
+    if (game != null || currentScreen != AppScreenState.inGame) return;
+    waitingRoom = WaitingRoom(playersPerMatch: update.playersPerMatch, players: update.players);
   }
 
   void handleStartingGame(StartingGame message) {
@@ -334,6 +361,7 @@ class ClientManager extends ChangeNotifier {
     final players =
         message.connectedPlayers.map((nickname) => nickname == me.nickname ? me : Player(nickname)).toList();
     game = Game(players, maxHandSize: message.maxHandSize);
+    waitingRoom = null;
     currentScreen = AppScreenState.inGame;
   }
 
@@ -475,4 +503,14 @@ class ClientManager extends ChangeNotifier {
     unawaited(_link.close());
     super.dispose();
   }
+}
+
+/// Players waiting for a match to fill up.
+class WaitingRoom {
+  final int playersPerMatch;
+  final List<String> players;
+
+  const WaitingRoom({required this.playersPerMatch, required this.players});
+
+  int get missing => (playersPerMatch - players.length).clamp(0, playersPerMatch);
 }

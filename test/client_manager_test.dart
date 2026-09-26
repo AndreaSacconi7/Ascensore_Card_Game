@@ -225,6 +225,51 @@ void main() {
             }));
 
     test(
+        'joining asks for the chosen match size and shows the waiting room',
+        () => run((async) {
+              manager.checkLoginStatus();
+              async.flushMicrotasks();
+              loggedIn(async, 'alice');
+
+              manager.joinGame(players: 3);
+              expect(connector.last.sent.last, {
+                'commandType': 'JOIN_GAME_REQUEST',
+                'executable': {'players': 3},
+              });
+              expect(manager.waitingRoom!.missing, 2);
+
+              server(async, 'WAITING_ROOM_UPDATE', {
+                'playersPerMatch': 3,
+                'players': ['bob', 'alice']
+              });
+              expect(manager.waitingRoom!.players, ['bob', 'alice']);
+              expect(manager.waitingRoom!.missing, 1);
+
+              server(async, 'STARTING_GAME', {
+                'connectedPlayers': ['bob', 'alice', 'carol'],
+                'maxHandSize': 10
+              });
+              expect(manager.waitingRoom, isNull);
+              expect(manager.game!.players, hasLength(3));
+            }));
+
+    test(
+        'leaving the queue tells the server and goes back to the menu',
+        () => run((async) {
+              manager.checkLoginStatus();
+              async.flushMicrotasks();
+              loggedIn(async, 'alice');
+              manager.joinGame(players: 4);
+
+              manager.leaveQueue();
+
+              expect(connector.last.sentTypes.last, 'LEAVE_GAME_REQUEST');
+              expect(manager.currentScreen, AppScreenState.mainMenu);
+              expect(manager.waitingRoom, isNull);
+              expect(manager.matchSize, 4, reason: 'remembered for the next match');
+            }));
+
+    test(
         'logging out during a pause cancels it',
         () => run((async) {
               startMatch(async);

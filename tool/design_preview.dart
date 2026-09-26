@@ -3,7 +3,7 @@
 //   flutter build web -t tool/design_preview.dart -o /tmp/preview
 //   open <served preview>/?s=play
 //
-// Scenarios: login, nickname, menu, waiting, bet, play, trick, peak, setresult, gameover, reconnecting.
+// Scenarios: login, nickname, menu, waiting, bet, bet10, play, trick, peak, setresult, gameover, reconnecting.
 import 'dart:async';
 
 import 'package:ascensore_client/app.dart';
@@ -66,7 +66,12 @@ Future<void> main() async {
       await login();
     case 'waiting':
       await login();
-      manager.joinGame();
+      manager.joinGame(players: 4);
+      await send('JOIN_GAME_RESPONSE', {'nickname': 'andrea', 'isJoined': true, 'playersPerMatch': 4});
+      await send('WAITING_ROOM_UPDATE', {
+        'playersPerMatch': 4,
+        'players': ['carol', 'andrea']
+      });
     case 'bet':
       // Third set, going up: 3 cards each; Bob and Carol have bet, it is your turn and you bet last
       await start(['bob', 'carol', 'andrea'],
@@ -128,6 +133,26 @@ Future<void> main() async {
       await send('SETTED_BET', {'nickname': 'andrea', 'bet': 4});
       await send('SETTED_BET', {'nickname': 'bob', 'bet': 5});
       await send('PLAYER_STATE_UPDATE', {'nickname': 'andrea', 'playerState': 'PUT'});
+    case 'bet10':
+      // Betting with a full hand of 10: eleven options, the hand still visible
+      await start(['bob', 'andrea'], setsPlayed: 9, handSize: 10, points: {'bob': 110, 'andrea': 90});
+      await send('HAND_UPDATE', {
+        'cards': [
+          card('COINS', 1),
+          card('COINS', 8),
+          card('CUPS', 3),
+          card('CUPS', 6),
+          card('CUPS', 10),
+          card('SWORDS', 2),
+          card('SWORDS', 9),
+          card('STICKS', 1),
+          card('STICKS', 4),
+          card('STICKS', 7),
+        ],
+      });
+      await send('BRISCOLA_UPDATE');
+      await send('SETTED_BET', {'nickname': 'bob', 'bet': 4});
+      await send('PLAYER_STATE_UPDATE', {'nickname': 'andrea', 'playerState': 'BET'});
     case 'setresult':
       await start(['bob', 'andrea'], setsPlayed: 5, handSize: 6);
       await send('SETTED_BET', {'nickname': 'andrea', 'bet': 2});

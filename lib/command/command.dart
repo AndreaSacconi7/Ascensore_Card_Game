@@ -14,7 +14,10 @@ class Command {
   factory Command.playerInfoRequest({required String token, String nickname = ''}) =>
       Command._('PLAYER_INFO_REQUEST', {'token': token, 'nickname': nickname});
 
-  factory Command.joinGame() => const Command._('JOIN_GAME_REQUEST');
+  /// Enter matchmaking for a match of [players] (2 to 4).
+  factory Command.joinGame(int players) => Command._('JOIN_GAME_REQUEST', {'players': players});
+
+  factory Command.leaveGame() => const Command._('LEAVE_GAME_REQUEST');
 
   factory Command.setBet(int bet) => Command._('SET_BET', {'bet': bet});
 

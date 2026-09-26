@@ -15,6 +15,7 @@ import 'player_state_update.dart';
 import 'setted_bet_update.dart';
 import 'starting_game.dart';
 import 'text_message.dart';
+import 'waiting_room_update.dart';
 
 typedef _Decoder = ExecutableInClient Function(Map<String, dynamic> executable);
 
@@ -22,6 +23,7 @@ typedef _Decoder = ExecutableInClient Function(Map<String, dynamic> executable);
 final Map<String, _Decoder> _decoders = {
   'PLAYER_INFO_RESPONSE': PlayerInfoResponse.fromJson,
   'JOIN_GAME_RESPONSE': JoinGameResponse.fromJson,
+  'WAITING_ROOM_UPDATE': WaitingRoomUpdate.fromJson,
   'STARTING_GAME': StartingGame.fromJson,
   'HAND_UPDATE': HandUpdate.fromJson,
   'BRISCOLA_UPDATE': BriscolaUpdate.fromJson,

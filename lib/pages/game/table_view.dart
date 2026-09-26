@@ -16,6 +16,9 @@ class TableView extends StatelessWidget {
   final bool Function(CardGame card) canDrop;
   final void Function(CardGame card) onDrop;
 
+  /// Shown over the middle of the table, e.g. your bet while the table is still empty.
+  final Widget? overlay;
+
   const TableView({
     super.key,
     required this.game,
@@ -23,6 +26,7 @@ class TableView extends StatelessWidget {
     required this.opponents,
     required this.canDrop,
     required this.onDrop,
+    this.overlay,
   });
 
   // Where each opponent's card sits, by number of opponents, in seating order (clockwise)
@@ -65,7 +69,7 @@ class TableView extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  Center(child: _BettingSummary(game: game)),
+                  if (overlay == null) Center(child: _BettingSummary(game: game)),
                   Positioned(top: 14, left: 16, child: _TrickCounter(game: game)),
                   for (var i = 0; i < opponents.length && i < slots.length; i++)
                     Align(alignment: slots[i], child: _Seat(player: opponents[i], game: game, width: width)),
@@ -73,6 +77,7 @@ class TableView extends StatelessWidget {
                     alignment: const Alignment(0, 0.8),
                     child: _Seat(player: me, game: game, width: width, isMe: true),
                   ),
+                  if (overlay != null) Center(child: overlay),
                 ],
               ),
             );
