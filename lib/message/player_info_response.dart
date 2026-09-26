@@ -1,27 +1,30 @@
-
-import 'package:ascensore_client/message/executable_in_client.dart';
-
 import '../client_manager.dart';
+import 'executable_in_client.dart';
 
 class PlayerInfoResponse implements ExecutableInClient {
+  static const invalidToken = 'INVALID_TOKEN';
+  static const nicknameMissing = 'NICKNAME_MISSING';
+  static const nicknameInvalid = 'NICKNAME_INVALID';
+  static const nicknameTaken = 'NICKNAME_TAKEN';
+
   final String nickname;
   final bool isLogged;
-  //TODO: poi qui si possono aggiungere altre info del player tipo experience, coins, buste possedute....
 
-  PlayerInfoResponse(
-      this.nickname,
-      this.isLogged
-  );
+  /// Logged in to Supabase but without a public nickname yet: the user must choose one.
+  final bool needsNickname;
 
-  PlayerInfoResponse.fromJson(Map<String, dynamic> json) :
-        nickname = json['executable']['nickname'] as String,
-        isLogged = json['executable']['isLogged'] as bool;
+  /// A match is in progress: its table state follows.
+  final bool inMatch;
+
+  final String? error;
+
+  PlayerInfoResponse.fromJson(Map<String, dynamic> json)
+      : nickname = json['nickname'] as String? ?? '',
+        isLogged = json['isLogged'] as bool? ?? false,
+        needsNickname = json['needsNickname'] as bool? ?? false,
+        inMatch = json['inMatch'] as bool? ?? false,
+        error = json['error'] as String?;
 
   @override
-  void execute({required ClientManager clientManager}) {
-      clientManager.handlePlayerInfo(this);
-  }
-
-
-
+  void execute({required ClientManager clientManager}) => clientManager.handlePlayerInfo(this);
 }

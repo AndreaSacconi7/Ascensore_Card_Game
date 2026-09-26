@@ -11,17 +11,17 @@ Real-time multiplayer client for **Ascensore**, a traditional Italian trick-taki
 ## The game
 
 Played with a 40-card Italian deck by 2–4 players. The hand size goes **up from 1 to 10 cards and back down to 1** — like an elevator (*ascensore*), 19 sets in total.
-At the start of every set each player **bets exactly how many tricks they will take**; the trump suit (*briscola*) changes every set.
+At the start of every set each player **bets exactly how many tricks they will take**; the last player to bet cannot make the bets add up to the number of tricks, so someone always misses. The trump suit (*briscola*) changes every set.
 
 ## Features
 
-- **Real-time multiplayer** over a persistent WebSocket connection
-- **Authentication with Supabase** (email/password, PKCE flow); the JWT is sent to the game server, which verifies it independently
+- **Real-time multiplayer** over a persistent WebSocket connection; runs on Android, iOS and the web
+- **Authentication with Supabase** (email/password, PKCE flow); the access token is sent to the game server, which verifies it independently
+- **Public nicknames** — players choose a unique nickname on first login; the email address is never shown to other players
 - **Automatic login** — the session is restored and refreshed on app start
-- **Reconnection** — a player who drops mid-game rejoins with the full game state restored
-- **Server-authoritative state** — the client never mutates game state optimistically; it validates moves locally (must follow suit, last-bidder constraint) and waits for the server to confirm
+- **Reconnection** — a dropped connection is retried with backoff while a banner shows the state; the server keeps the seat for 60 seconds and replays the table (hand, briscola, bets, tricks, cards on the table, whose turn it is)
+- **Server-authoritative state** — the client never changes game state optimistically; it validates moves locally for instant feedback (must follow suit, last-bidder constraint) and applies only what the server confirms
 - Drag-and-drop cards, bet slider, animated trick and set results
-- Multiple rematches without restarting the app
 
 ## Roadmap
 
@@ -34,28 +34,49 @@ At the start of every set each player **bets exactly how many tricks they will t
 ```mermaid
 flowchart LR
     UI["Flutter UI<br/>(pages + widgets)"] -- "Provider / Selector" --> CM["ClientManager<br/>(ChangeNotifier)"]
-    CM -- "Command (JSON)" --> WS(("WebSocket"))
-    WS -- "Message (JSON)" --> CM
-    WS <--> S["Spring Boot server"]
-    CM -- "sign in / refresh" --> SB["Supabase Auth"]
-    S -- "verify JWT (JWKS)" --> SB
+    CM -- "Command (JSON)" --> L["ServerLink<br/>reconnect + backoff"]
+    L -- "Message (JSON)" --> Q[["message queue"]]
+    Q --> CM
+    L <--> S["Spring Boot server"]
+    CM -- "sign in / refresh" --> A["AuthService<br/>(Supabase Auth)"]
+    S -- "verify JWT (JWKS)" --> SB["Supabase"]
 ```
 
-- **Command / Message protocol** — every client action (`PutCard`, `SetBet`, `JoinGameRequest`, …) is a `Command`; every server event (`HandUpdate`, `PlayedCardUpdate`, `EndSetUpdate`, …) is a `Message`. Both are serialized to JSON and mirror the class hierarchy on the server, so adding a new interaction means adding one class on each side.
-- **Executable messages** — each incoming message implements `ExecutableInClient` and applies itself to the client state, keeping the dispatch loop small.
-- **Single source of truth** — `ClientManager` holds the game model and notifies the UI; `AppWrapper` switches screens (login → menu → game → game over) from a single `AppScreenState` enum.
-- **Pure, tested game rules** — move validation lives in `GameRules`, independent of Flutter widgets, and is covered by unit tests (`flutter test`).
+- **Ordered message queue** — server messages are applied strictly in arrival order. After a trick or a set the queue pauses for a few seconds so players can see the cards; messages that arrive meanwhile wait instead of being applied early or out of order, and logging out cancels the pause cleanly.
+- **Connection is not session** — `ServerLink` owns the socket and reconnects with backoff when it drops; every new connection identifies the player again, which is also how the server resumes a match. Only an explicit logout (or a refused token) signs the player out.
+- **Command / message protocol** — the client sends intentions (`SET_BET`, `PUT_CARD`, …) with no player name in them (the server knows who is on the socket); every server event is decoded by a registry in `server_message.dart` into a class that applies itself to the state. The wire format is documented in the server repository (`docs/protocol.md`).
+- **Testable seams** — the socket (`GameConnection`) and Supabase (`AuthService`) sit behind interfaces, so `ClientManager` is tested with fakes in fake time: login and nicknames, trick and set pauses, reconnection mid-match, logout during a pause.
+- **Contract test against the real server** — `test/fixtures/real_match.jsonl` holds every message the real server sent to two players during a full match, including a dropped connection and the reconnection; both players' clients replay it and must end on the server's final scores.
 
 ```
 lib/
-├── command/   # client → server actions
-├── message/   # server → client events
+├── auth/      # AuthService (Supabase)
+├── network/   # GameConnection (WebSocket), ServerLink (reconnection)
+├── command/   # client → server commands
+├── message/   # server → client messages and their decoders
 ├── model/     # game state, players, cards, rules
 ├── pages/     # screens
 └── widgets/   # reusable UI components
 ```
 
+## Running
+
+```bash
+flutter run --dart-define=SERVER_URL=wss://your-server/ws
+```
+
+Without `SERVER_URL` the app connects to a local server (`ws://localhost:8080/ws` on the web, `ws://10.0.2.2:8080/ws` from the Android emulator).
+
+```bash
+flutter test
+```
+
+## Known limitations
+
+- The UI mixes Italian and English strings; it is not localized yet.
+- If a player leaves a match for good, the match ends for everyone (a server-side rule for now).
+
 ## Tech stack
 
 - **Client:** Flutter · Dart · Provider · WebSockets · Supabase Auth
-- **Server** (private repository): Java 17 · Spring Boot · PostgreSQL (Supabase)
+- **Server** (separate repository): Java 17 · Spring Boot · PostgreSQL (Supabase)

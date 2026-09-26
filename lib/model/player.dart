@@ -1,10 +1,9 @@
-
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:ascensore_client/model/card_game.dart';
 import 'package:ascensore_client/model/player_state.dart';
 
+/// A player at the table. Counters are [ValueNotifier]s so each widget rebuilds only for its own value.
 class Player {
-
   final String nickname;
   final ValueNotifier<int> scoreNotifier = ValueNotifier<int>(0);
   final ValueNotifier<int> betNotifier = ValueNotifier<int>(0);
@@ -14,51 +13,17 @@ class Player {
 
   Player(this.nickname);
 
-  void setScore(int newScore) {
-    scoreNotifier.value = newScore;
-  }
+  int get score => scoreNotifier.value;
+  set score(int value) => scoreNotifier.value = value;
 
-  int getScore() {
-    return scoreNotifier.value;
-  }
+  int get bet => betNotifier.value;
+  set bet(int value) => betNotifier.value = value;
 
-  String getNickname() {
-    return nickname;
-  }
+  /// Tricks taken in the current set.
+  int get roundsWon => roundsWonNotifier.value;
+  set roundsWon(int value) => roundsWonNotifier.value = value;
 
-  void setBet(int newBet) {
-    betNotifier.value = newBet; // Aggiorna il valore e notifica i listener
-  }
-
-  int getBet() {
-    return betNotifier.value;
-  }
-
-  void setRoundsWon(int newRoundsWon) {
-    roundsWonNotifier.value = newRoundsWon;
-  }
-
-  int getRoundsWon() {
-    return roundsWonNotifier.value;
-  }
-
-  void setPlayedCard(CardGame? card) {
-    playedCardNotifier.value = card;        // Aggiorna il valore e notifica i listener
-  }
-
-  void clearPlayedCard() {
-    playedCardNotifier.value = null;        // Aggiorna il valore e notifica i listener
-  }
-
-  CardGame? getPlayedCard() {
-    return playedCardNotifier.value;
-  }
-
-  void setPlayerState(PlayerState newState) {
-    playerState = newState;
-  }
-
-  PlayerState getPlayerState() {
-    return playerState;
-  }
+  /// Card this player has on the table in the current trick, if any.
+  CardGame? get playedCard => playedCardNotifier.value;
+  set playedCard(CardGame? card) => playedCardNotifier.value = card;
 }

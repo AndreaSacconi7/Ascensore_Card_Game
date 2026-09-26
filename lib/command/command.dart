@@ -1,25 +1,27 @@
 import 'dart:convert';
 
-import 'package:ascensore_client/command/command_type.dart';
-import 'package:ascensore_client/command/executable_in_server.dart';
+import '../model/card_game.dart';
 
+/// Client-to-server commands: {"commandType": ..., "executable": {...}}.
+/// The server identifies the player by the socket, so commands carry no player name.
 class Command {
-  final CommandType commandType;
-  ExecutableInServer? executable;
-  String? nickName;
+  final String commandType;
+  final Map<String, dynamic> executable;
 
-  Command({
-    required this.commandType,
-    this.executable,
-    this.nickName,
-  });
+  const Command._(this.commandType, [this.executable = const {}]);
 
-  // Metodo per serializzare in JSON
-  String toJson() {
-    return jsonEncode({
-      'commandType': commandType.toString().split('.').last,
-      'executable': executable?.toJson(),
-      'clientSessionId': nickName,
-    });
-  }
+  /// First command on every socket. [nickname] is only read by the server when the account has none yet.
+  factory Command.playerInfoRequest({required String token, String nickname = ''}) =>
+      Command._('PLAYER_INFO_REQUEST', {'token': token, 'nickname': nickname});
+
+  factory Command.joinGame() => const Command._('JOIN_GAME_REQUEST');
+
+  factory Command.setBet(int bet) => Command._('SET_BET', {'bet': bet});
+
+  factory Command.putCard(CardGame card) =>
+      Command._('PUT_CARD', {'seed': card.seed.name, 'value': card.value});
+
+  factory Command.logout() => const Command._('LOGOUT');
+
+  String toJson() => jsonEncode({'commandType': commandType, 'executable': executable});
 }

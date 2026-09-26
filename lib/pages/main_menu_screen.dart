@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../app_screen_state.dart';
+import 'package:provider/provider.dart';
+
 import '../client_manager.dart';
-import '../command/join_game_request.dart';
-import '../command/command.dart';
-import '../command/command_type.dart';
 import '../widgets/menu_button.dart';
 
-import 'package:provider/provider.dart';
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
@@ -15,12 +12,11 @@ class MainMenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // Sfondo con gradiente moderno
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF1D2671), // Blu/Viola scuro
-              Color(0xFF0A113E), // Blu notte
+              Color(0xFF1D2671),
+              Color(0xFF0A113E),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -31,7 +27,7 @@ class MainMenuScreen extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                // --- Sezione 1: Info Giocatore (Alto a Sinistra) ---
+                // Player name, top left
                 Align(
                   alignment: Alignment.topLeft,
                   child: Selector<ClientManager, String?>(
@@ -58,40 +54,22 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                 ),
 
-                // --- Sezione 2: Bottoni (Centrati) ---
                 Expanded(
                   child: Center(
                     child: Column(
-                      mainAxisSize: MainAxisSize.min, // Per contrarre la colonna
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Bottone Start Game (Primario)
                         MenuButton(
                           text: "START GAME",
-                          onPressed: () {
-                            final manager = Provider.of<ClientManager>(context, listen: false);
-
-                            JoinGameRequest executable = JoinGameRequest(nickname: manager.mySelfPlayer!.nickname);
-                            Command command = Command(
-                              commandType: CommandType.JOIN_GAME_REQUEST,
-                              executable: executable,
-                            );
-
-                            manager.setCurrentScreen(AppScreenState.inGame);
-
-                            manager.sendCommand(command.toJson());
-
-                            // Il server risponderà con STARTING_GAME quando la lobby è piena
-                          },
-                          isPrimary: true, // Stile diverso
+                          // The game screen waits until the server sends STARTING_GAME
+                          onPressed: () => context.read<ClientManager>().joinGame(),
+                          isPrimary: true,
                         ),
                         const SizedBox(height: 20),
 
                         MenuButton(
                           text: "LOGOUT",
-                          onPressed: () {
-                            final manager = Provider.of<ClientManager>(context, listen: false);
-                            manager.logOut();
-                          }
+                          onPressed: () => context.read<ClientManager>().logOut(),
                         ),
                       ],
                     ),

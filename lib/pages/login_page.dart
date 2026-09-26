@@ -1,10 +1,8 @@
-// Importato per Future
 import 'package:flutter/material.dart';
-// Importato per il token
 import 'package:provider/provider.dart';
 import '../authentication_state.dart';
 import '../client_manager.dart';
-import '../widgets/menu_button_v2.dart';
+import '../widgets/form_button.dart';
 import '../widgets/modern_text_field.dart';
 
 class LoginPage extends StatefulWidget {
@@ -15,11 +13,10 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controller per i vari campi
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // Stato locale per gestire se l'utente vuole fare Login o Registrazione
+  // Whether the form signs in or creates an account
   bool _isLoginMode = true;
 
   @override
@@ -37,9 +34,6 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // --- LOGICA DI LOGIN ---
-
-  /// Login con Email e Password
   void _submitEmailAuth(BuildContext context) {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -54,10 +48,8 @@ class _LoginPageState extends State<LoginPage> {
     final manager = Provider.of<ClientManager>(context, listen: false);
 
     if (_isLoginMode) {
-      // Chiama il metodo di Login nel manager
       manager.loginWithEmail(email, password);
     } else {
-      // Chiama il metodo di Registrazione nel manager
       manager.signUpWithEmail(email, password);
     }
   }
@@ -67,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
     return Consumer<ClientManager>(
       builder: (context, manager, child) {
 
-        // Gestione Errori
+        // Show a pending error once
         if (manager.authError != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -77,13 +69,11 @@ class _LoginPageState extends State<LoginPage> {
           });
         }
 
-        // Gestione Loading
         if (manager.authState == AuthenticationState.loading ||
             manager.authState == AuthenticationState.unknown) {
           return _buildLoadingScaffold();
         }
 
-        // UI Principale
         return Scaffold(
           body: Container(
             decoration: const BoxDecoration(
@@ -112,7 +102,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 30),
 
-                      // --- SEZIONE EMAIL & PASSWORD ---
                       ModernTextField(
                         controller: _emailController,
                         hintText: "Email",
@@ -123,19 +112,18 @@ class _LoginPageState extends State<LoginPage> {
                         controller: _passwordController,
                         hintText: "Password",
                         icon: Icons.lock_outline,
+                        isPassword: true,
                       ),
                       const SizedBox(height: 24),
 
-                      // Bottone Login/Registrati
-                      MenuButton(
+                      FormButton(
                         text: _isLoginMode ? "ACCEDI CON EMAIL" : "REGISTRATI",
                         onPressed: manager.authState == AuthenticationState.loading
                             ? null
                             : () => _submitEmailAuth(context),
-                        isPrimary: true, // Colore principale per l'azione email
+                        isPrimary: true,
                       ),
 
-                      // Toggle Login/Registrazione
                       TextButton(
                         onPressed: () {
                           setState(() {

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../client_manager.dart';
-
 import 'package:provider/provider.dart';
 
+import '../client_manager.dart';
 import '../model/player.dart';
 
 class GameOverScreen extends StatelessWidget {
@@ -13,20 +12,13 @@ class GameOverScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ClientManager>(
       builder: (context, clientManager, child) {
-        // Classifica finale per punteggio (decrescente)
-        final sortedPlayers = _sortPlayersByScore(clientManager.game!.players);
-
-        // Determina se ho vinto
-        final mySelf = clientManager.mySelfPlayer;
-
-        // Il vincitore è il primo della lista ordinata
+        final game = clientManager.game;
+        if (game == null) {
+          return const Scaffold(body: SizedBox.shrink());
+        }
+        final sortedPlayers = _sortPlayersByScore(game.players);
         final winner = sortedPlayers.isNotEmpty ? sortedPlayers.first : null;
-
-        // Ho vinto se esisto e il mio nome corrisponde a quello del vincitore
-        // (Usa l'ID se disponibile, altrimenti il nickname)
-        final bool didWin = (mySelf != null && winner != null)
-            ? mySelf.nickname == winner.nickname
-            : false;
+        final bool didWin = winner != null && winner == clientManager.mySelfPlayer;
 
         return Scaffold(
           backgroundColor: didWin ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
@@ -38,7 +30,6 @@ class GameOverScreen extends StatelessWidget {
                 children: [
                   const Spacer(flex: 1),
 
-                  // --- HEADER (Vittoria/Sconfitta) ---
                   _buildResultHeader(didWin),
 
                   const SizedBox(height: 30),
@@ -55,27 +46,21 @@ class GameOverScreen extends StatelessWidget {
 
                   const SizedBox(height: 15),
 
-                  // --- LISTA GIOCATORI ---
                   Expanded(
                     flex: 4,
                     child: ListView.builder(
                       itemCount: sortedPlayers.length,
                       itemBuilder: (context, index) {
                         final player = sortedPlayers[index];
-                        final isWinner = index == 0; // Il primo è il vincitore
+                        final isWinner = index == 0;
 
                         return _buildPlayerCard(player, index + 1, isWinner);
                       },
                     ),
                   ),
 
-                  // --- BOTTONE AZIONE ---
                   ElevatedButton(
-                    onPressed: () {
-                      //torna alla home
-                      final manager = Provider.of<ClientManager>(context, listen: false);
-                      manager.endGame(didWin);
-                    },
+                    onPressed: () => context.read<ClientManager>().backToMenu(),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 15),
                       backgroundColor: didWin ? Colors.green : Colors.red,
@@ -96,8 +81,6 @@ class GameOverScreen extends StatelessWidget {
       },
     );
   }
-
-  // --- WIDGETS UI (Invariati nella logica visiva) ---
 
   Widget _buildResultHeader(bool didWin) {
     return Column(
@@ -146,7 +129,6 @@ class GameOverScreen extends StatelessWidget {
           padding: EdgeInsets.all(isFirst ? 20.0 : 16.0),
           child: Row(
             children: [
-              // Posizione
               Container(
                 width: 30,
                 height: 30,
@@ -165,7 +147,6 @@ class GameOverScreen extends StatelessWidget {
               ),
               const SizedBox(width: 15),
 
-              // Nome
               Expanded(
                 child: Text(
                   player.nickname,
@@ -177,9 +158,8 @@ class GameOverScreen extends StatelessWidget {
                 ),
               ),
 
-              // Punteggio
               Text(
-                "${player.getScore()} pt",
+                "${player.score} pt",
                 style: TextStyle(
                   fontSize: isFirst ? 20 : 16,
                   fontWeight: FontWeight.bold,
@@ -187,7 +167,6 @@ class GameOverScreen extends StatelessWidget {
                 ),
               ),
 
-              // Corona
               if (isFirst) ...[
                 const SizedBox(width: 10),
                 const Icon(Icons.star, color: Colors.amber),
@@ -199,11 +178,6 @@ class GameOverScreen extends StatelessWidget {
     );
   }
 
-  List<Player> _sortPlayersByScore(List<Player> players) {
-    // Crea una copia della lista per non modificare l'originale
-    List<Player> sortedPlayers = List.from(players);
-    // Ordina i giocatori in base al punteggio (decrescente)
-    sortedPlayers.sort((a, b) => b.getScore().compareTo(a.getScore()));
-    return sortedPlayers;
-  }
+  List<Player> _sortPlayersByScore(List<Player> players) =>
+      List.of(players)..sort((a, b) => b.score.compareTo(a.score));
 }

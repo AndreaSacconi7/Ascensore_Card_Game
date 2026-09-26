@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class SetResultAnimation extends StatefulWidget {
   final VoidCallback onComplete;
-  final bool isWin; // True = Vittoria, False = Sconfitta
-  final String? customText; // Opzionale
+  final bool isWin;
+  final String? customText;
 
   const SetResultAnimation({
     super.key,
@@ -26,13 +26,13 @@ class _SetResultAnimationState extends State<SetResultAnimation>
   @override
   void initState() {
     super.initState();
-    // Durata leggermente diversa per dare feedback diversi
+    // A heavier, slower animation for a lost set
     _controller = AnimationController(
       duration: Duration(milliseconds: widget.isWin ? 1500 : 1800),
       vsync: this,
     );
 
-    // 1. Effetto Rimbalzo all'apparizione (più "pesante" se si perde)
+    // Bounce in
     _scaleAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -40,7 +40,7 @@ class _SetResultAnimationState extends State<SetResultAnimation>
       ),
     );
 
-    // 2. Movimento: UP per la vittoria, DOWN per la sconfitta
+    // Float up for a win, sink for a loss
     final targetOffset = widget.isWin ? const Offset(0, -2.0) : const Offset(0, 2.0);
 
     _slideAnimation = Tween<Offset>(begin: Offset.zero, end: targetOffset).animate(
@@ -50,7 +50,7 @@ class _SetResultAnimationState extends State<SetResultAnimation>
       ),
     );
 
-    // 3. Dissolvenza alla fine
+    // Fade out
     _opacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -69,9 +69,8 @@ class _SetResultAnimationState extends State<SetResultAnimation>
 
   @override
   Widget build(BuildContext context) {
-    // Configurazione stile basata su vittoria/sconfitta
     final color = widget.isWin ? Colors.amber : Colors.redAccent;
-    final iconData = widget.isWin ? Icons.star_rounded : Icons.cancel_presentation_rounded; // o Icons.sentiment_very_dissatisfied
+    final iconData = widget.isWin ? Icons.star_rounded : Icons.cancel_presentation_rounded;
     final defaultText = widget.isWin ? "WON!" : "LOST...";
     final textToShow = widget.customText ?? defaultText;
 

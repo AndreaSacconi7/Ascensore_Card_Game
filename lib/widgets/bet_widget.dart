@@ -7,7 +7,6 @@ class BetWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Dimensione fissa, indipendente dallo schermo
     const double buttonSize = 50.0;
     const double buttonHeight = buttonSize;
 
@@ -15,8 +14,8 @@ class BetWidget extends StatelessWidget {
       valueListenable: betNotifier,
       builder: (context, betValue, child) {
         return Container(
-          width: buttonSize, // Usa la larghezza fissa
-          height: buttonHeight, // Usa l'altezza fissa
+          width: buttonSize,
+          height: buttonHeight,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
           clipBehavior: Clip.antiAlias,
           decoration: ShapeDecoration(

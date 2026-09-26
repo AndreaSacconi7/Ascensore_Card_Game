@@ -1,71 +1,32 @@
-import 'package:flutter/foundation.dart';
 import 'package:ascensore_client/model/card_game.dart';
 import 'package:ascensore_client/model/player.dart';
 
+/// The client's copy of the match, updated only by server messages.
 class Game {
+  /// Players in seating order, as sent in STARTING_GAME.
+  final List<Player> players;
 
-  List<Player> players = [];
-
-  List<Player> playerOrder = [];
+  /// Order of play for the current trick (betting order at the start of a set).
+  List<Player> playerOrder;
 
   CardGame? briscola;
 
+  /// Hand size of the current set; the protocol calls it the set number.
   int set = 1;
-  int round = 1;
-  int turn = 0;
 
+  /// Tricks completed in the current set.
+  int round = 0;
 
-  void addPlayer(Player player) {
-    players.add(player);
-  }
+  Game(this.players) : playerOrder = List.of(players);
 
-  List<Player> getPlayers() {
-    return players;
-  }
-
-  void removePlayer(Player player) {
-    for(Player pl in players) {
-      if(pl.getNickname() == player.getNickname()) {
-        debugPrint('Rimuovo il giocatore ${pl.getNickname()}');
-        players.remove(pl);
-        break;
-      }
+  Player? playerNamed(String nickname) {
+    for (final p in players) {
+      if (p.nickname == nickname) return p;
     }
+    return null;
   }
 
-  void setPlayerOrder(List<Player> newPlayers) {
-    playerOrder = newPlayers;
-  }
-
-  void setBriscola(CardGame card) {
-    briscola = card;
-  }
-
-  CardGame? getBriscola() {
-    return briscola;
-  }
-
-  void setSet(int newSet) {
-    set = newSet;
-  }
-
-  int getSet() {
-    return set;
-  }
-
-  void setRound(int newRound) {
-    round = newRound;
-  }
-
-  int getRound() {
-    return round;
-  }
-
-  void setTurn(int newTurn) {
-    turn = newTurn;
-  }
-
-  int getTurn() {
-    return turn;
-  }
+  /// Players named by [nicknames], in that order; unknown names are skipped.
+  List<Player> playersInOrder(Iterable<String> nicknames) =>
+      nicknames.map(playerNamed).whereType<Player>().toList();
 }

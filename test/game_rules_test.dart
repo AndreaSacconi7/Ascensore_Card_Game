@@ -6,24 +6,24 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('GameRules.isValidCard', () {
-    final hand = [CardGame(Seed.COINS, 3), CardGame(Seed.SWORDS, 7)];
+    final hand = [const CardGame(Seed.COINS, 3), const CardGame(Seed.SWORDS, 7)];
 
     test('any card is valid when leading the trick', () {
       expect(GameRules.isValidCard(leadCard: null, hand: hand, card: hand[1]), isTrue);
     });
 
     test('following the lead seed is valid', () {
-      final lead = CardGame(Seed.COINS, 10);
+      const lead = CardGame(Seed.COINS, 10);
       expect(GameRules.isValidCard(leadCard: lead, hand: hand, card: hand[0]), isTrue);
     });
 
     test('must follow the lead seed when holding it', () {
-      final lead = CardGame(Seed.COINS, 10);
+      const lead = CardGame(Seed.COINS, 10);
       expect(GameRules.isValidCard(leadCard: lead, hand: hand, card: hand[1]), isFalse);
     });
 
     test('any card is valid when the lead seed is not in hand', () {
-      final lead = CardGame(Seed.CUPS, 1);
+      const lead = CardGame(Seed.CUPS, 1);
       expect(GameRules.isValidCard(leadCard: lead, hand: hand, card: hand[1]), isTrue);
     });
   });
@@ -33,8 +33,8 @@ void main() {
 
     setUp(() {
       order = [Player('alice'), Player('bob'), Player('me')];
-      order[0].setBet(1);
-      order[1].setBet(1);
+      order[0].bet = 1;
+      order[1].bet = 1;
     });
 
     test('players other than the last one can bet anything', () {
@@ -64,7 +64,7 @@ void main() {
       final card = CardGame.fromJson({'seed': 'SWORDS', 'value': 4});
       expect(card.seed, Seed.SWORDS);
       expect(card.value, 4);
-      expect(card.getImagePath(), 'assets/cards/SWORDS_4.png');
+      expect(card.imagePath, 'assets/cards/SWORDS_4.png');
     });
   });
 }

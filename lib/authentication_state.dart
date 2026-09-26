@@ -1,7 +1,11 @@
 enum AuthenticationState {
-  unknown, // Stato iniziale
-  loading, // Sta controllando il token o attendendo il server
-  authenticated, // Login riuscito
-  unauthenticated, // Nessun token, pronto per il login
-  error // Errore di login
+  // Nothing checked yet
+  unknown,
+  // Checking the saved session or waiting for the server
+  loading,
+  authenticated,
+  // Signed out: the login form is shown
+  unauthenticated,
+  // Sign-in or sign-up failed
+  error,
 }

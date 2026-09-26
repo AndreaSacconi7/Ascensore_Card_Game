@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class MenuButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
-  final bool isPrimary; // Per differenziare lo stile (es. Start vs Altri)
+  final bool isPrimary;
 
   const MenuButton({
     super.key,
@@ -15,28 +15,27 @@ class MenuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Colori per i bottoni
-    final primaryColor = Colors.green[600]; // Verde per Start
-    final secondaryColor = Colors.white.withValues(alpha: 0.15); // Grigio/Trasparente
+    final primaryColor = Colors.green[600];
+    final secondaryColor = Colors.white.withValues(alpha: 0.15);
     final shadowColor = Colors.black.withValues(alpha: 0.3);
 
     return SizedBox(
-      width: 280, // Larghezza fissa per tutti i bottoni
+      width: 280,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: isPrimary ? primaryColor : secondaryColor,
-          foregroundColor: Colors.white, // Colore del testo
+          foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30.0), // Forma a pillola
+            borderRadius: BorderRadius.circular(30.0),
           ),
-          elevation: 5, // Ombra
+          elevation: 5,
           shadowColor: shadowColor,
           textStyle: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            letterSpacing: 1.5, // Spaziatura tra le lettere
+            letterSpacing: 1.5,
           ),
         ),
         child: Text(text),

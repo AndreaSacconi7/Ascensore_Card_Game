@@ -1,17 +1,11 @@
-import 'package:ascensore_client/client_manager.dart';
-import 'package:ascensore_client/message/executable_in_client.dart';
+import '../client_manager.dart';
+import 'executable_in_client.dart';
 
 class PlayerExitGame implements ExecutableInClient {
-
   final String nickname;
 
-  PlayerExitGame(this.nickname);
-
-  PlayerExitGame.fromJson(Map<String, dynamic> json) :
-        nickname = json['executable']['nickname'] as String;
+  PlayerExitGame.fromJson(Map<String, dynamic> json) : nickname = json['nickname'] as String;
 
   @override
-  void execute({required ClientManager clientManager}) {
-    clientManager.handlePlayerExitGame(this);
-  }
+  void execute({required ClientManager clientManager}) => clientManager.handlePlayerExitGame(this);
 }

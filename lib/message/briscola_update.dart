@@ -1,28 +1,16 @@
-import 'package:ascensore_client/message/executable_in_client.dart';
-
 import '../client_manager.dart';
 import '../model/card_game.dart';
+import 'executable_in_client.dart';
 
 class BriscolaUpdate implements ExecutableInClient {
+  /// Null in the peak set until the card leading the trick sets it.
+  final CardGame? briscolaCard;
 
-  final CardGame briscolaCard;
-
-  BriscolaUpdate(this.briscolaCard);
-
-  factory BriscolaUpdate.fromJson(Map<String, dynamic> json){
-
-    final briscolaCard = CardGame.fromJson(json['executable']['briscolaCard']);
-
-    return BriscolaUpdate(briscolaCard);
-  }
-
+  BriscolaUpdate.fromJson(Map<String, dynamic> json)
+      : briscolaCard = json['briscolaCard'] == null
+            ? null
+            : CardGame.fromJson(json['briscolaCard'] as Map<String, dynamic>);
 
   @override
-  void execute({required ClientManager clientManager}) {
-    clientManager.handleBriscolaUpdate(this);
-  }
-
-
-
-
+  void execute({required ClientManager clientManager}) => clientManager.handleBriscolaUpdate(this);
 }

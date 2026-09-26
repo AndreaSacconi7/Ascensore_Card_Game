@@ -1,27 +1,15 @@
-import 'package:ascensore_client/client_manager.dart';
-import 'package:ascensore_client/message/executable_in_client.dart';
-
+import '../client_manager.dart';
 import '../model/card_game.dart';
+import 'executable_in_client.dart';
 
 class PlayedCardUpdate implements ExecutableInClient {
-
   final String nickname;
   final CardGame playedCard;
 
-  PlayedCardUpdate(this.nickname, this.playedCard);
-
-
-  factory PlayedCardUpdate.fromJson(Map<String, dynamic> json){
-
-    final playedCard = CardGame.fromJson(json['executable']['playedCard']);
-    final nickname = json['executable']['nickname'] as String;
-
-    return PlayedCardUpdate(nickname, playedCard);
-  }
+  PlayedCardUpdate.fromJson(Map<String, dynamic> json)
+      : nickname = json['nickname'] as String,
+        playedCard = CardGame.fromJson(json['playedCard'] as Map<String, dynamic>);
 
   @override
-  void execute({required ClientManager clientManager}) {
-    clientManager.handlePlayedCard(this);
-  }
-
+  void execute({required ClientManager clientManager}) => clientManager.handlePlayedCard(this);
 }

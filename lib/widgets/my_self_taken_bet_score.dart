@@ -14,15 +14,13 @@ class MySelfBetTakenScoreWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Larghezza fissa, indipendente dallo schermo
     const double widgetWidth = 140.0;
 
     return SizedBox(
-      width: widgetWidth, // Usa la larghezza fissa
+      width: widgetWidth,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Score Widget
           Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -30,7 +28,7 @@ class MySelfBetTakenScoreWidget extends StatelessWidget {
               ]
           ),
           const SizedBox(height: 15),
-          // Two Bet Widgets
+          // Bet and tricks taken
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

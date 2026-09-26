@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Un widget personalizzato per i campi di testo moderni
+/// Rounded text field used by the login and nickname forms.
 class ModernTextField extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final bool isPassword;
-  final TextEditingController? controller; // Aggiunto per il guest
+  final TextEditingController? controller;
 
   const ModernTextField({
     super.key,
@@ -22,26 +22,22 @@ class ModernTextField extends StatelessWidget {
       obscureText: isPassword,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
-        // Stile del testo "hint"
         hintText: hintText,
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
 
-        // Icona a sinistra
         prefixIcon: Icon(icon, color: Colors.white.withValues(alpha: 0.7)),
 
-        // Sfondo del campo
         filled: true,
         fillColor: Colors.white.withValues(alpha: 0.1),
 
-        // Bordi
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30.0),
-          borderSide: BorderSide.none, // Nessun bordo quando non in focus
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30.0),
           borderSide: BorderSide(
-            color: Colors.green[400]!, // Bordo verde quando selezionato
+            color: Colors.green[400]!,
             width: 2,
           ),
         ),

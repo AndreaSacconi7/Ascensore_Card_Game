@@ -1,33 +1,27 @@
-import 'package:ascensore_client/client_manager.dart';
-import 'package:ascensore_client/message/executable_in_client.dart';
+import '../client_manager.dart';
+import '../model/card_game.dart';
+import 'executable_in_client.dart';
 
-class InfoAfterReconnection implements ExecutableInClient{
-
+/// Table state for a player who reconnected to a match in progress.
+class InfoAfterReconnection implements ExecutableInClient {
+  final int set;
+  final int round;
   final Map<String, int> scores;
   final Map<String, int> bets;
   final Map<String, int> roundsWon;
 
-  InfoAfterReconnection.fromJson(Map<String, dynamic> json) :
-        scores = (json['executable']['scores']
-        as Map<String, dynamic>).map((key, value) => MapEntry(
-          key,
-          value as int,
-        )),
-        bets = (json['executable']['bets']
-        as Map<String, dynamic>).map((key, value) => MapEntry(
-          key,
-          value as int,
-        )),
-        roundsWon = (json['executable']['roundsWon']
-        as Map<String, dynamic>).map((key, value) => MapEntry(
-          key,
-          value as int,
-        ));
+  /// Cards on the table in the current trick, in play order.
+  final Map<String, CardGame> playedCards;
+
+  InfoAfterReconnection.fromJson(Map<String, dynamic> json)
+      : set = json['set'] as int? ?? 1,
+        round = json['round'] as int? ?? 0,
+        scores = intMap(json['scores']),
+        bets = intMap(json['bets']),
+        roundsWon = intMap(json['roundsWon']),
+        playedCards = (json['playedCards'] as Map<String, dynamic>? ?? const {})
+            .map((key, value) => MapEntry(key, CardGame.fromJson(value as Map<String, dynamic>)));
 
   @override
-  void execute({required ClientManager clientManager}) {
-    clientManager.handleInfoAfterReconnection(this);
-  }
-
-
+  void execute({required ClientManager clientManager}) => clientManager.handleInfoAfterReconnection(this);
 }

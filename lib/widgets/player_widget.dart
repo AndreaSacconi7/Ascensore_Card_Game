@@ -18,16 +18,14 @@ class PlayerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Larghezza fissa, indipendente dallo schermo
     const double widgetWidth = 120.0;
     const avatarSize = widgetWidth * 0.4;
 
     return SizedBox(
-      width: widgetWidth, // Usa la larghezza fissa
+      width: widgetWidth,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Player Name
           Text(
             name,
             textAlign: TextAlign.center,
@@ -40,7 +38,6 @@ class PlayerWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 15),
-          // Player Avatar
           Container(
             width: avatarSize,
             height: avatarSize,
@@ -58,7 +55,7 @@ class PlayerWidget extends StatelessWidget {
               ]
           ),
           const SizedBox(height: 15),
-          // Two Bet Widgets
+          // Bet and tricks taken
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [

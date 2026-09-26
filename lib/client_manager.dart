@@ -1,563 +1,446 @@
-import 'dart:developer';
+import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:ascensore_client/app_screen_state.dart';
-import 'package:ascensore_client/message/end_game.dart';
-import 'package:ascensore_client/message/info_after_reconnection.dart';
-import 'package:ascensore_client/message/join_game_response.dart';
-import 'package:ascensore_client/message/player_exit_game.dart';
-import 'package:ascensore_client/model/card_game.dart';
-import 'package:ascensore_client/model/set_result_animation_state.dart';
-import 'package:ascensore_client/model/seed.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'dart:convert';
-import 'dart:async';
 
+import 'app_screen_state.dart';
+import 'auth/auth_service.dart';
 import 'authentication_state.dart';
 import 'command/command.dart';
-import 'command/command_type.dart';
-import 'command/logout.dart';
-import 'command/player_info_request.dart';
 import 'message/briscola_update.dart';
+import 'message/end_game.dart';
 import 'message/end_round_update.dart';
 import 'message/end_set_update.dart';
 import 'message/executable_in_client.dart';
 import 'message/hand_update.dart';
-import 'message/login_response.dart';
+import 'message/info_after_reconnection.dart';
+import 'message/join_game_response.dart';
 import 'message/played_card_update.dart';
+import 'message/player_exit_game.dart';
 import 'message/player_info_response.dart';
 import 'message/player_state_update.dart';
+import 'message/server_message.dart';
 import 'message/setted_bet_update.dart';
 import 'message/starting_game.dart';
 import 'message/text_message.dart';
+import 'model/card_game.dart';
 import 'model/game.dart';
 import 'model/my_self_player.dart';
 import 'model/player.dart';
 import 'model/player_state.dart';
+import 'model/set_result_animation_state.dart';
+import 'network/game_connection.dart';
+import 'network/server_link.dart';
 
-// Stato globale del client: connessione WebSocket, autenticazione e partita.
+/// Client state and the only entry point to the server.
+///
+/// Server messages are applied in arrival order from a queue. After a trick or a set the queue pauses for
+/// [resultDisplayTime] so players can see the cards before the table is cleared; messages that arrive
+/// meanwhile wait their turn instead of being applied out of order.
 class ClientManager extends ChangeNotifier {
-  WebSocketChannel? channel;
-  StreamSubscription? _stream;
+  ClientManager({
+    required AuthService auth,
+    required GameConnector connector,
+    this.resultDisplayTime = const Duration(seconds: 3),
+    List<Duration>? reconnectBackoff,
+  }) : _auth = auth {
+    _link = ServerLink(
+      connector: connector,
+      onConnected: _identify,
+      onMessage: _onServerText,
+      onStateChanged: _onLinkStateChanged,
+      backoff: reconnectBackoff ?? ServerLink.defaultBackoff,
+    );
+  }
 
-  // Stato di gioco e autenticazione
+  final AuthService _auth;
+  late final ServerLink _link;
+
+  /// How long the last trick (or the set result) stays on screen.
+  final Duration resultDisplayTime;
+
+  // --- State read by the UI ---
+
+  AppScreenState currentScreen = AppScreenState.login;
+  AuthenticationState authState = AuthenticationState.unknown;
+
+  /// Shown once by the login page, then cleared.
+  String? authError;
+
+  /// Why the chosen nickname was refused (one of the PlayerInfoResponse error codes).
+  String? nicknameError;
+  bool submittingNickname = false;
+
+  LinkState linkState = LinkState.closed;
+
   MySelfPlayer? mySelfPlayer;
   Game? game;
-  bool isAuthenticated = false;
-  AuthenticationState authState = AuthenticationState.unknown;
-  String? authError;
-  AppScreenState currentScreen = AppScreenState.login;
-  bool calculatingScores = false;
-
   SetResultAnimationState lastSetResult = SetResultAnimationState.none;
 
-  void setCurrentScreen(AppScreenState newScreen) {
-    currentScreen = newScreen;
-    notifyListeners();
-  }
+  /// One-off message for the game screen (a rejected move, a player leaving); cleared when shown.
+  String? serverNotice;
 
-  MySelfPlayer? getMySelfPlayer() {
-    return mySelfPlayer;
-  }
+  // --- Internals ---
 
-  void sendCommand(dynamic jsonCommand) {
-    log('Sending command to server: $jsonCommand');
+  // Nickname the user chose, sent until the server accepts it
+  String? _pendingNickname;
 
-    channel!.sink.add(jsonCommand);
-  }
+  final Queue<ExecutableInClient> _inbox = Queue();
+  Timer? _pauseTimer;
 
-  // Deserializza il messaggio, lo esegue sullo stato e notifica la UI
-  void _handleMessage(dynamic jsonMessage) {
-    debugPrint('Message from server: $jsonMessage');
-    final Map<String, dynamic> jsonMap = jsonDecode(jsonMessage);
-    final String stringMessageType = jsonMap['messageType'];
+  bool get _isPaused => _pauseTimer != null;
 
-    // Identifica l'eseguibile in base al tipo di messaggio
-    final ExecutableInClient executable;
+  // ------------------------------------------------------------------
+  // Account
+  // ------------------------------------------------------------------
 
-    if(stringMessageType == 'LOGIN_RESPONSE') {
-      executable = LoginResponse.fromJson(jsonMap);
-    }else if(stringMessageType == 'PLAYER_INFO_RESPONSE') {
-      executable = PlayerInfoResponse.fromJson(jsonMap);
-    }else if(stringMessageType == 'JOIN_GAME_RESPONSE'){
-      executable = JoinGameResponse.fromJson(jsonMap);
-    }else if(stringMessageType == 'HAND_UPDATE') {
-      executable = HandUpdate.fromJson(jsonMap);
-    }else if(stringMessageType == 'BRISCOLA_UPDATE') {
-      executable = BriscolaUpdate.fromJson(jsonMap);
-    }else if(stringMessageType == 'STARTING_GAME') {
-      executable = StartingGame.fromJson(jsonMap);
-    }else if(stringMessageType == 'PLAYER_STATE_UPDATE') {
-      executable = PlayerStateUpdate.fromJson(jsonMap);
-    }else if(stringMessageType == 'SETTED_BET'){
-      executable = SettedBetUpdate.fromJson(jsonMap);
-    }else if(stringMessageType == 'PLAYED_CARD'){
-      executable = PlayedCardUpdate.fromJson(jsonMap);
-    }else if(stringMessageType == 'TEXT_MESSAGE') {
-      executable = TextMessage.fromJson(jsonMap);
-    } else if(stringMessageType == 'END_ROUND'){
-      executable = EndRoundUpdate.fromJson(jsonMap);
-    } else if(stringMessageType == 'END_SET'){
-      executable = EndSetUpdate.fromJson(jsonMap);
-    } else if(stringMessageType == 'END_GAME'){
-      executable = EndGame.fromJson(jsonMap);
-    } else if(stringMessageType == 'PLAYER_EXIT_GAME') {
-      executable = PlayerExitGame.fromJson(jsonMap);
-    } else if(stringMessageType == 'INFO_AFTER_RECONNECTION') {
-      executable = InfoAfterReconnection.fromJson(jsonMap);
-    } else {
-      debugPrint('Unknown message type: ${jsonMap['messageType']}');
+  /// Resumes a saved session at startup, if there is one.
+  Future<void> checkLoginStatus() async {
+    _setAuthState(AuthenticationState.loading);
+    final token = await _auth.currentAccessToken();
+    if (token == null) {
+      _setAuthState(AuthenticationState.unauthenticated);
       return;
     }
-
-    // L'eseguibile ora modifica i dati DENTRO il ClientManager
-    executable.execute(clientManager: this);
-
-    // Dopo che i dati sono stati aggiornati, avvisa tutti
-    // i widget in ascolto
-    notifyListeners();
-  }
-
-  // URL del server: sovrascrivibile con --dart-define=SERVER_URL=ws://host:port/ws
-  static const String _serverUrlOverride = String.fromEnvironment('SERVER_URL');
-  static String get _serverUrl => _serverUrlOverride.isNotEmpty
-      ? _serverUrlOverride
-      : (kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws');
-
-  // Metodo per connettersi (chiamato al Login o signUp)
-  void connect() {
-    if (channel != null) return; // Già connesso
-
-    try {
-      channel = WebSocketChannel.connect(Uri.parse(_serverUrl));
-
-      // Mettiamoci in ascolto
-      _stream = channel!.stream.listen(
-            (message) {
-          _handleMessage(message);
-        },
-        onError: (error) {
-          debugPrint("Errore Socket: $error");
-          logOut(); // Disconnetti in caso di errore
-        },
-        onDone: () {
-          debugPrint("Socket chiuso dal server");
-          logOut(); // Pulisci tutto se il server chiude
-        },
-      );
-    } catch (e) {
-      debugPrint("Impossibile connettersi: $e");
-      notifyListeners();
-    }
-  }
-
-
-  Future<void> logOut() async {
-    // Chiude la sessione Supabase (cancella il token locale)
-    await Supabase.instance.client.auth.signOut();
-
-    // Avvisa il server, se la connessione è ancora aperta
-    if (channel != null) {
-      try {
-        sendCommand(Command(commandType: CommandType.LOGOUT, executable: Logout()).toJson());
-      } catch (e) {
-        debugPrint("Impossibile inviare il logout: $e");
-      }
-    }
-
-    await _stream?.cancel(); // Smetti di ascoltare
-    _stream = null;
-
-    channel?.sink.close(); // Chiudi il socket
-    channel = null;        // Resetta la variabile per il prossimo login
-
-    //resetto lo stato del client manager
-    mySelfPlayer = null;
-    game = null;
-    lastSetResult = SetResultAnimationState.none;
-
-    // Torna alla schermata di login
-    authState = AuthenticationState.unauthenticated;
-    authError = null;
-    isAuthenticated = false;
-    currentScreen = AppScreenState.login;
-    notifyListeners();
-
-    debugPrint("Logout effettuato. Token cancellato.");
-  }
-
-  // --- AZIONI CHIAMATE DALLA UI ---
-  /// Controlla se un token è già salvato all'avvio dell'app
-  Future<void> checkLoginStatus() async {
-
-    authState = AuthenticationState.loading;
-    notifyListeners();
-
-    // Supabase ha una sessione salvata?
-    final session = Supabase.instance.client.auth.currentSession;
-
-    if (session != null) {
-
-      if(session.isExpired){
-        try {
-          // Forza il refresh del token
-          final response = await Supabase.instance.client.auth.refreshSession();
-          final freshToken = response.session?.accessToken;
-
-          if (freshToken != null) {
-            debugPrint("Token rinnovato con successo!");
-            _fetchPlayerInfoWithExistingToken(freshToken);
-          } else {
-            debugPrint("Impossibile rinnovare. Logout forzato.");
-            logOut();
-          }
-        } catch (e) {
-          debugPrint("Errore durante il refresh del token: ${e.toString()}");
-          logOut();
-        }
-      }else{
-        // Token ancora valido: autenticazione diretta col server
-        debugPrint("Sessione Supabase trovata.");
-        _fetchPlayerInfoWithExistingToken(session.accessToken);
-      }
-
-    } else {
-      // Nessuna sessione salvata, l'utente deve fare il login manuale
-      debugPrint("Nessuna sessione trovata.");
-      isAuthenticated = false;
-      authState = AuthenticationState.unauthenticated;
-      currentScreen = AppScreenState.login;
-    }
-
-    notifyListeners();
+    _link.open();
   }
 
   Future<void> loginWithEmail(String email, String password) async {
-    authState = AuthenticationState.loading;
-    notifyListeners();
+    _setAuthState(AuthenticationState.loading);
     try {
-      final res = await Supabase.instance.client.auth.signInWithPassword(
-          email: email,
-          password: password
-      );
-      if (res.session != null) {
-        _fetchPlayerInfoFirstTime(res.session!.accessToken, email);
-      }
+      await _auth.signIn(email, password);
+      _link.open();
     } catch (e) {
-      authError = "Login fallito: ${e.toString()}";
-      authState = AuthenticationState.error;
-      notifyListeners();
+      _failAuth('Login fallito: $e');
     }
   }
 
   Future<void> signUpWithEmail(String email, String password) async {
-    authState = AuthenticationState.loading;
-    notifyListeners();
+    _setAuthState(AuthenticationState.loading);
     try {
-      final res = await Supabase.instance.client.auth.signUp(
-          email: email,
-          password: password
-      );
-      // Nota: Supabase di default richiede conferma email.
-      // Se disattivata, fa login automatico.
-      if (res.session != null) {
-        _fetchPlayerInfoFirstTime(res.session!.accessToken, email);
-      } else {
-        //NON ATTIVA QUESTA COSA
-        authError = "Controlla la tua email per confermare l'iscrizione!";
-        authState = AuthenticationState.error; // O uno stato 'waiting_confirmation'
-        notifyListeners();
+      final token = await _auth.signUp(email, password);
+      if (token == null) {
+        authError = 'Controlla la tua email per confermare la registrazione, poi accedi.';
+        _setAuthState(AuthenticationState.unauthenticated);
+        return;
       }
+      _link.open();
     } catch (e) {
-      authError = "Registrazione fallita: ${e.toString()}";
-      authState = AuthenticationState.error;
-      notifyListeners();
+      _failAuth('Registrazione fallita: $e');
     }
   }
 
-  void _fetchPlayerInfoFirstTime(String token, String nickname){
-
-    connect();
-
-    PlayerInfoRequest playerInfoRequest = PlayerInfoRequest(token: token, nickname: nickname);
-    Command command = Command(
-      commandType: CommandType.PLAYER_INFO_REQUEST,
-      executable: playerInfoRequest,
-      nickName: nickname,
-    );
-
-    sendCommand(command.toJson());
+  /// Sends the chosen public nickname; the answer comes as PLAYER_INFO_RESPONSE.
+  void submitNickname(String nickname) {
+    _pendingNickname = nickname;
+    nicknameError = null;
+    submittingNickname = true;
+    notifyListeners();
+    _identify();
   }
 
-  void _fetchPlayerInfoWithExistingToken(String token){
-
-    connect();
-
-    PlayerInfoRequest playerInfoRequest = PlayerInfoRequest(token: token, nickname: "fake_nickname");
-    Command command = Command(
-      commandType: CommandType.PLAYER_INFO_REQUEST,
-      executable: playerInfoRequest,
-      nickName: "fake_nickname",        //tanto sarà il server a identificare il giocatore dal token, questo è solo un placeholder
-    );
-
-    sendCommand(command.toJson());
-  }
-
-  void handlePlayedCard(PlayedCardUpdate playedCardUpdate) {
-
-    for(var p in game!.players){
-      if(p.getNickname() == playedCardUpdate.nickname){
-        p.setPlayedCard(playedCardUpdate.playedCard);
-
-        if(playedCardUpdate.nickname == mySelfPlayer!.getNickname()){
-          //rimuovo la carta giocata dalla mano del giocatore
-          mySelfPlayer!.removeCardFromHand(playedCardUpdate.playedCard);
-        }
-        break;
-      }
-    }
-  }
-
-  /// Pulisce eventuali messaggi di errore
   void clearAuthError() {
     authError = null;
-    authState = AuthenticationState.unauthenticated;
   }
 
-  void handleBriscolaUpdate(BriscolaUpdate briscolaUpdate) {
-
-    game?.setBriscola(briscolaUpdate.briscolaCard);
+  Future<void> logOut() async {
+    _link.send(Command.logout().toJson());
+    // Not awaited: the close handshake must not keep the player on this screen
+    unawaited(_link.close());
+    _resetMatch();
+    mySelfPlayer = null;
+    _pendingNickname = null;
+    nicknameError = null;
+    submittingNickname = false;
+    currentScreen = AppScreenState.login;
+    await _auth.signOut();
+    _setAuthState(AuthenticationState.unauthenticated);
   }
 
-  void handleEndRoundUpdate(EndRoundUpdate endRoundUpdate) {
-
-    List<Player> newPlayerOrder = [];
-    for(String nickname in endRoundUpdate.nextPlayerOrderAndTaken.keys){
-      for(Player p in game!.players){
-        if(p.getNickname() == nickname){
-          p.setRoundsWon(endRoundUpdate.nextPlayerOrderAndTaken[nickname]!);
-          newPlayerOrder.add(p);
-          break;
-        }
-      }
+  // Runs on every new connection: identifies the player, which also resumes a match in progress
+  Future<void> _identify() async {
+    final token = await _auth.currentAccessToken();
+    if (token == null) {
+      // The saved session is gone (signed out elsewhere, or the refresh token expired)
+      await logOut();
+      return;
     }
-
-    game!.setPlayerOrder(newPlayerOrder);
-
-    game!.setSet(endRoundUpdate.nextRoundNumber);
-
-    Future.delayed(const Duration(seconds: 3), () {
-      // Dopo 3 secondi, chiama il metodo di pulizia
-      _clearBoardForNextRound();
-    });
+    _link.send(Command.playerInfoRequest(token: token, nickname: _pendingNickname ?? '').toJson());
   }
 
-  void handleEndSetUpdate(EndSetUpdate endSetUpdate) {
-
-    List<Player> newPlayerOrder = [];
-
-    for(String nickname in endSetUpdate.nextPlayerOrderAndScore.keys){
-      for(Player p in game!.players){
-        if(p.getNickname() == nickname){
-          if(p.getNickname() == mySelfPlayer!.getNickname()){
-            int oldScore = mySelfPlayer!.getScore();
-            int newScore = endSetUpdate.nextPlayerOrderAndScore[nickname]!;
-
-            // Se il punteggio è aumentato, ho vinto io
-            if (newScore > oldScore) {
-              lastSetResult = SetResultAnimationState.win;
-            } else {
-              // Se il punteggio è uguale, ha vinto qualcun altro
-              lastSetResult = SetResultAnimationState.loss;
-            }
-          }
-          p.setScore(endSetUpdate.nextPlayerOrderAndScore[nickname]!);
-          newPlayerOrder.add(p);
-          break;
-        }
-      }
-    }
-
-    game!.setPlayerOrder(newPlayerOrder);
-
-    game!.setSet(endSetUpdate.nextSetNumber);
-
-    calculatingScores = true;
-
-    Future.delayed(const Duration(seconds: 3), () {
-      // Dopo 3 secondi, chiama il metodo di pulizia
-      _clearBoardForNextSet();
-      calculatingScores = false;
-      //resetto il risultato dell'ultimo set
-      lastSetResult = SetResultAnimationState.none;
-    });
+  void _failAuth(String message) {
+    authError = message;
+    _setAuthState(AuthenticationState.error);
   }
 
-  void _clearBoardForNextRound(){
-    for(var p in game!.players){
-      p.setPlayedCard(CardGame(Seed.VOID, 0));
-    }
+  void _setAuthState(AuthenticationState state) {
+    authState = state;
     notifyListeners();
   }
 
-  void _clearBoardForNextSet(){
-    for(var p in game!.players){
-      p.setPlayedCard(CardGame(Seed.VOID, 0));
-      p.setRoundsWon(0);
-      p.setBet(0);
-    }
-    notifyListeners();
-  }
+  // ------------------------------------------------------------------
+  // Moves
+  // ------------------------------------------------------------------
 
-  void handleHandUpdate(HandUpdate handUpdate) {
-
-    mySelfPlayer?.setHandCards(handUpdate.handCards);
-  }
-
-  void handlePlayerInfo(PlayerInfoResponse playerInfoResponse) {
-
-    if (playerInfoResponse.isLogged) {
-      debugPrint('Welcome, ${playerInfoResponse.nickname}');
-
-
-      isAuthenticated = true;
-      authState = AuthenticationState.authenticated;
-      currentScreen = AppScreenState.mainMenu;
-
-      mySelfPlayer = MySelfPlayer(playerInfoResponse.nickname);
-    } else {
-      debugPrint('Login failed');
-      // FALLIMENTO!
-      isAuthenticated = false;
-      authState = AuthenticationState.error;
-      authError = "Login fallito.";
-    }
-  }
-
-  void handleJoinGameResponse(JoinGameResponse joinGameResponse) {
-    if (joinGameResponse.isJoined == true) {
-      debugPrint('${joinGameResponse.nickname} si è unito al gioco con successo.');
-      // Puoi aggiornare lo stato del gioco qui se necessario
-    } else {
-      debugPrint('Unione al gioco fallita per ${joinGameResponse.nickname}.');
-      // Gestisci l'errore di unione al gioco
-    }
-
-  }
-
-  void handlePlayerStateUpdate(PlayerStateUpdate playerStateUpdate) {
-    if(calculatingScores){
-      //ritardo l'aggiornamento dello stato del giocatore di 3 secondi
-      Future.delayed(const Duration(seconds: 3), () {
-        _updatePlayerState(playerStateUpdate);
-      });
-    }else{
-      //aggiorno subito lo stato del giocatore
-      _updatePlayerState(playerStateUpdate);
-    }
-  }
-
-  void _updatePlayerState(PlayerStateUpdate playerStateUpdate){
-    // Aggiorna lo stato del giocatore nel gioco
-    for (var player in game!.players) {
-      if (player.getNickname() == playerStateUpdate.nickname) {
-        player.setPlayerState(playerStateUpdate.playerState);
-        debugPrint("Aggiornato stato di ${player.getNickname()} a ${playerStateUpdate.playerState}");
-        break;
-      }
-    }
-    notifyListeners();
-  }
-
-  void handleSettedBet(SettedBetUpdate settedBetUpdate) {
-
-    for(var p in game!.players){
-      if(p.getNickname() == settedBetUpdate.nickname){
-        p.setBet(settedBetUpdate.bet);
-        break;
-      }
-    }
-  }
-
-  void handleStartingGame(StartingGame startingGame) {
-
-    debugPrint("STARTING a GAME !!!!!");
-    game = Game();
-    //aggiungo altri player alla lista di giocatori nel game
-    for(var playerNick in startingGame.connectedPlayers){
-      var finded = false;
-      for(var p in game!.players){
-        if(p.getNickname() == playerNick){
-          finded = true;
-          break;
-        }
-      }
-      if(!finded){
-        if(playerNick != mySelfPlayer!.getNickname()) {
-          game!.addPlayer(Player(playerNick));
-        } else {
-          game!.addPlayer(mySelfPlayer!);
-        }
-      }
-    }
-    //players inviati dal server sono già in ordine di turno
-    game!.setPlayerOrder(game!.players);
-
-    //faccio navigare la UI alla gameScreen
+  void joinGame() {
     currentScreen = AppScreenState.inGame;
-  }
-
-  void handleTextMessage(TextMessage textMessage) {}
-
-  void handlePlayerExitGame(PlayerExitGame playerExitGame) {
-    //TODO: implementare
-  }
-
-  void handleEndGame(EndGame endGame) {
-
-    endGame.gameResult.forEach((nickname, score) {
-      debugPrint("Giocatore: $nickname, Punteggio finale: $score");
-      for(Player p in game!.players){
-        if(p.getNickname() == nickname){
-          p.setScore(score);
-          break;
-        }
-      }
-    });
-
-    currentScreen = AppScreenState.gameOver;
-  }
-
-  void handleInfoAfterReconnection(InfoAfterReconnection infoAfterReconnection) {
-    int score, bets, roundsWon;
-    for(Player p in game!.players){
-      score = infoAfterReconnection.scores[p.getNickname()]!;
-      bets = infoAfterReconnection.bets[p.getNickname()]!;
-      roundsWon = infoAfterReconnection.roundsWon[p.getNickname()]!;
-      p.setScore(score);
-      p.setBet(bets);
-      p.setRoundsWon(roundsWon);
-    }
     notifyListeners();
+    _link.send(Command.joinGame().toJson());
   }
 
-  void endGame(bool didWin) {
+  /// State changes only when the server confirms with SETTED_BET.
+  void setBet(int bet) => _link.send(Command.setBet(bet).toJson());
 
-    //TODO: in seguito implementare aumento di ex points, premi ecc... in base a didWin
-    //reset dello stato del game per prepararsi a un nuovo gioco
-    game = null;
-    mySelfPlayer!.handCards = [];
-    mySelfPlayer!.setScore(0);
-    mySelfPlayer!.setBet(0);
-    mySelfPlayer!.setRoundsWon(0);
-    mySelfPlayer!.clearPlayedCard();
-    mySelfPlayer!.setPlayerState(PlayerState.IDLE);
+  /// The card leaves the hand only when the server confirms with PLAYED_CARD.
+  void putCard(CardGame card) => _link.send(Command.putCard(card).toJson());
 
+  void backToMenu() {
+    _resetMatch();
     currentScreen = AppScreenState.mainMenu;
     notifyListeners();
   }
 
+  /// Returns the pending notice and clears it.
+  String? consumeNotice() {
+    final notice = serverNotice;
+    serverNotice = null;
+    return notice;
+  }
 
-// ... altri metodi come loginWithGoogle, etc.
+  // ------------------------------------------------------------------
+  // Connection and message queue
+  // ------------------------------------------------------------------
+
+  void _onLinkStateChanged(LinkState state) {
+    linkState = state;
+    if (state == LinkState.reconnecting) {
+      // The server replays the full table state after reconnecting: queued updates are stale
+      _pauseTimer?.cancel();
+      _pauseTimer = null;
+      _inbox.clear();
+    }
+    notifyListeners();
+  }
+
+  void _onServerText(String raw) {
+    final ExecutableInClient? message;
+    try {
+      message = decodeServerMessage(raw);
+    } catch (e) {
+      debugPrint('Unreadable server message: $e');
+      return;
+    }
+    if (message == null) {
+      debugPrint('Unknown server message: $raw');
+      return;
+    }
+    _inbox.add(message);
+    _drain();
+  }
+
+  void _drain() {
+    while (!_isPaused && _inbox.isNotEmpty) {
+      final message = _inbox.removeFirst();
+      try {
+        message.execute(clientManager: this);
+      } catch (e, stack) {
+        debugPrint('Failed to apply ${message.runtimeType}: $e\n$stack');
+      }
+      notifyListeners();
+    }
+  }
+
+  /// Holds the queue for [resultDisplayTime], then runs [onResume] and applies what arrived meanwhile.
+  void _pauseQueue(VoidCallback onResume) {
+    _pauseTimer = Timer(resultDisplayTime, () {
+      _pauseTimer = null;
+      onResume();
+      notifyListeners();
+      _drain();
+    });
+  }
+
+  // Leaving the match from the UI: also drops queued messages and any pending pause
+  void _resetMatch() {
+    _pauseTimer?.cancel();
+    _pauseTimer = null;
+    _inbox.clear();
+    _clearMatchState();
+    serverNotice = null;
+  }
+
+  // Safe inside a message handler: never touches the queue, which may hold the messages that follow
+  void _clearMatchState() {
+    game = null;
+    lastSetResult = SetResultAnimationState.none;
+  }
+
+  // ------------------------------------------------------------------
+  // Server messages (applied by the queue, in order)
+  // ------------------------------------------------------------------
+
+  void handlePlayerInfo(PlayerInfoResponse response) {
+    submittingNickname = false;
+    if (response.isLogged) {
+      _pendingNickname = null;
+      nicknameError = null;
+      authState = AuthenticationState.authenticated;
+      final wasPlaying = currentScreen == AppScreenState.inGame && game != null;
+      _clearMatchState();
+      mySelfPlayer = MySelfPlayer(response.nickname);
+      if (response.inMatch) {
+        // Reconnected to a match in progress: STARTING_GAME and the table state follow
+        currentScreen = AppScreenState.inGame;
+      } else {
+        if (wasPlaying) {
+          serverNotice = 'La partita è terminata mentre eri disconnesso.';
+        }
+        currentScreen = AppScreenState.mainMenu;
+      }
+    } else if (response.needsNickname) {
+      authState = AuthenticationState.authenticated;
+      nicknameError = response.error == PlayerInfoResponse.nicknameMissing ? null : response.error;
+      currentScreen = AppScreenState.chooseNickname;
+    } else {
+      // Token refused: the session is no longer valid
+      authError = 'Sessione scaduta, accedi di nuovo.';
+      unawaited(logOut());
+    }
+  }
+
+  void handleJoinGameResponse(JoinGameResponse response) {
+    if (!response.isJoined) {
+      serverNotice = 'Impossibile entrare in partita, riprova.';
+      currentScreen = AppScreenState.mainMenu;
+    }
+  }
+
+  void handleStartingGame(StartingGame message) {
+    final me = mySelfPlayer;
+    if (me == null) return;
+    me
+      ..handCards = const []
+      ..score = 0
+      ..bet = 0
+      ..roundsWon = 0
+      ..playedCard = null;
+    final players = message.connectedPlayers
+        .map((nickname) => nickname == me.nickname ? me : Player(nickname))
+        .toList();
+    game = Game(players);
+    currentScreen = AppScreenState.inGame;
+  }
+
+  void handleHandUpdate(HandUpdate message) {
+    mySelfPlayer?.handCards = List.unmodifiable(message.handCards);
+  }
+
+  void handleBriscolaUpdate(BriscolaUpdate message) {
+    game?.briscola = message.briscolaCard;
+  }
+
+  void handlePlayerStateUpdate(PlayerStateUpdate message) {
+    game?.playerNamed(message.nickname)?.playerState = message.playerState;
+  }
+
+  void handleSettedBet(SettedBetUpdate message) {
+    game?.playerNamed(message.nickname)?.bet = message.bet;
+  }
+
+  void handlePlayedCard(PlayedCardUpdate message) {
+    final player = game?.playerNamed(message.nickname);
+    if (player == null) return;
+    player.playedCard = message.playedCard;
+    if (player == mySelfPlayer) {
+      mySelfPlayer!.removeCardFromHand(message.playedCard);
+    }
+  }
+
+  void handleEndRoundUpdate(EndRoundUpdate message) {
+    final game = this.game;
+    if (game == null) return;
+    message.nextPlayerOrderAndTaken.forEach((nickname, taken) {
+      game.playerNamed(nickname)?.roundsWon = taken;
+    });
+    game.playerOrder = game.playersInOrder(message.nextPlayerOrderAndTaken.keys);
+    game.round = message.nextRoundNumber;
+
+    // Keep the finished trick on the table for a moment
+    _pauseQueue(() {
+      for (final p in game.players) {
+        p.playedCard = null;
+      }
+    });
+  }
+
+  void handleEndSetUpdate(EndSetUpdate message) {
+    final game = this.game;
+    final me = mySelfPlayer;
+    if (game == null || me == null) return;
+
+    final myNewScore = message.nextPlayerOrderAndScore[me.nickname];
+    if (myNewScore != null) {
+      // An exact bet always gains points, a missed one always loses them
+      lastSetResult = myNewScore > me.score ? SetResultAnimationState.win : SetResultAnimationState.loss;
+    }
+    message.nextPlayerOrderAndScore.forEach((nickname, score) {
+      game.playerNamed(nickname)?.score = score;
+    });
+    game.playerOrder = game.playersInOrder(message.nextPlayerOrderAndScore.keys);
+    game.set = message.nextSetNumber;
+    game.round = 0;
+
+    // Show the last trick and the set result, then clear the table for the next deal
+    _pauseQueue(() {
+      for (final p in game.players) {
+        p
+          ..playedCard = null
+          ..bet = 0
+          ..roundsWon = 0;
+      }
+      lastSetResult = SetResultAnimationState.none;
+    });
+  }
+
+  void handleEndGame(EndGame message) {
+    final game = this.game;
+    if (game == null) return;
+    message.gameResult.forEach((nickname, score) {
+      game.playerNamed(nickname)?.score = score;
+    });
+    currentScreen = AppScreenState.gameOver;
+  }
+
+  void handlePlayerExitGame(PlayerExitGame message) {
+    final player = game?.playerNamed(message.nickname);
+    if (player == null) return;
+    player.playerState = PlayerState.EXIT;
+    serverNotice = '${message.nickname} ha lasciato la partita.';
+  }
+
+  void handleTextMessage(TextMessage message) {
+    serverNotice = message.text;
+  }
+
+  void handleInfoAfterReconnection(InfoAfterReconnection message) {
+    final game = this.game;
+    if (game == null) return;
+    game
+      ..set = message.set
+      ..round = message.round;
+    for (final p in game.players) {
+      p
+        ..score = message.scores[p.nickname] ?? p.score
+        ..bet = message.bets[p.nickname] ?? 0
+        ..roundsWon = message.roundsWon[p.nickname] ?? 0
+        ..playedCard = message.playedCards[p.nickname];
+    }
+  }
+
+  @override
+  void dispose() {
+    _pauseTimer?.cancel();
+    unawaited(_link.close());
+    super.dispose();
+  }
 }

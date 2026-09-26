@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Bottone del menu con icona opzionale.
-class MenuButton extends StatelessWidget {
+/// Full-width button for forms (login, nickname), with an optional icon.
+class FormButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
-  final bool isPrimary; // Per lo stile (primario o secondario)
-  final IconData? icon; // Icona opzionale
+  final bool isPrimary;
+  final IconData? icon;
 
-  const MenuButton({
+  const FormButton({
     super.key,
     required this.text,
     required this.onPressed,
@@ -18,7 +18,6 @@ class MenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = isPrimary
-    // Stile Primario (verde)
         ? ElevatedButton.styleFrom(
       backgroundColor: Colors.green[400],
       foregroundColor: Colors.black,
@@ -32,7 +31,6 @@ class MenuButton extends StatelessWidget {
         letterSpacing: 1,
       ),
     )
-    // Stile Secondario (trasparente con bordo)
         : OutlinedButton.styleFrom(
       foregroundColor: Colors.white.withValues(alpha: 0.9),
       padding: const EdgeInsets.symmetric(vertical: 20),

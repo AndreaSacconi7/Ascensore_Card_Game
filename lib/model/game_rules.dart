@@ -1,12 +1,12 @@
 import 'package:ascensore_client/model/card_game.dart';
 import 'package:ascensore_client/model/player.dart';
 
-/// Regole di gioco verificate lato client prima di inviare un comando al server.
+/// Rules checked on the client before sending a move, for immediate feedback.
+/// The server checks them again and has the final word.
 class GameRules {
   GameRules._();
 
-  /// Chi non apre il giro deve rispondere al seme della prima carta giocata,
-  /// se ne ha almeno una in mano.
+  /// A player who holds a card of the lead seed must follow it.
   static bool isValidCard({
     required CardGame? leadCard,
     required List<CardGame> hand,
@@ -18,18 +18,20 @@ class GameRules {
     return !hand.any((c) => c.seed == leadCard.seed);
   }
 
-  /// L'ultimo giocatore a scommettere non può rendere la somma delle
-  /// scommesse uguale al numero di carte in mano.
+  /// The last player to bet cannot make the bets add up to the number of tricks.
   static bool isValidBet({
     required List<Player> playerOrder,
     required String myNickname,
     required int bet,
     required int cardsInHand,
   }) {
-    if (playerOrder.last.nickname != myNickname) {
+    if (bet < 0 || bet > cardsInHand) {
+      return false;
+    }
+    if (playerOrder.isEmpty || playerOrder.last.nickname != myNickname) {
       return true;
     }
-    final totalBets = playerOrder.fold<int>(bet, (sum, p) => sum + p.getBet());
+    final totalBets = playerOrder.fold<int>(bet, (sum, p) => sum + p.bet);
     return totalBets != cardsInHand;
   }
 }
