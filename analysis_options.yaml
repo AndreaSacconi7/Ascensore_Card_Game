@@ -6,3 +6,6 @@ linter:
     # CommandType / MessageType / Seed values are serialized by name and must
     # match the SCREAMING_CASE enums of the Java server exactly.
     constant_identifier_names: false
+
+formatter:
+  page_width: 120

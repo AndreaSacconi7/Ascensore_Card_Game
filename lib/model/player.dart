@@ -11,6 +11,9 @@ class Player {
   final ValueNotifier<CardGame?> playedCardNotifier = ValueNotifier<CardGame?>(null);
   PlayerState playerState = PlayerState.IDLE;
 
+  /// Whether this player has already bet in the current set (a bet of 0 is still a bet).
+  bool hasBet = false;
+
   Player(this.nickname);
 
   int get score => scoreNotifier.value;

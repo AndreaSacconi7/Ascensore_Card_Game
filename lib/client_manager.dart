@@ -25,6 +25,7 @@ import 'message/starting_game.dart';
 import 'message/text_message.dart';
 import 'model/card_game.dart';
 import 'model/game.dart';
+import 'model/game_rules.dart';
 import 'model/my_self_player.dart';
 import 'model/player.dart';
 import 'model/player_state.dart';
@@ -77,6 +78,9 @@ class ClientManager extends ChangeNotifier {
   Game? game;
   SetResultAnimationState lastSetResult = SetResultAnimationState.none;
 
+  /// Points this player gained or lost in the set that just ended, shown with [lastSetResult].
+  int lastSetDelta = 0;
+
   /// One-off message for the game screen (a rejected move, a player leaving); cleared when shown.
   String? serverNotice;
 
@@ -111,7 +115,8 @@ class ClientManager extends ChangeNotifier {
       await _auth.signIn(email, password);
       _link.open();
     } catch (e) {
-      _failAuth('Login fallito: $e');
+      debugPrint('Sign-in failed: $e');
+      _failAuth('Email o password non corretti.');
     }
   }
 
@@ -126,7 +131,8 @@ class ClientManager extends ChangeNotifier {
       }
       _link.open();
     } catch (e) {
-      _failAuth('Registrazione fallita: $e');
+      debugPrint('Sign-up failed: $e');
+      _failAuth('Registrazione non riuscita: controlla l\'email e usa una password di almeno 6 caratteri.');
     }
   }
 
@@ -322,12 +328,12 @@ class ClientManager extends ChangeNotifier {
       ..handCards = const []
       ..score = 0
       ..bet = 0
+      ..hasBet = false
       ..roundsWon = 0
       ..playedCard = null;
-    final players = message.connectedPlayers
-        .map((nickname) => nickname == me.nickname ? me : Player(nickname))
-        .toList();
-    game = Game(players);
+    final players =
+        message.connectedPlayers.map((nickname) => nickname == me.nickname ? me : Player(nickname)).toList();
+    game = Game(players, maxHandSize: message.maxHandSize);
     currentScreen = AppScreenState.inGame;
   }
 
@@ -344,7 +350,9 @@ class ClientManager extends ChangeNotifier {
   }
 
   void handleSettedBet(SettedBetUpdate message) {
-    game?.playerNamed(message.nickname)?.bet = message.bet;
+    game?.playerNamed(message.nickname)
+      ?..bet = message.bet
+      ..hasBet = true;
   }
 
   void handlePlayedCard(PlayedCardUpdate message) {
@@ -354,6 +362,17 @@ class ClientManager extends ChangeNotifier {
     if (player == mySelfPlayer) {
       mySelfPlayer!.removeCardFromHand(message.playedCard);
     }
+    _markTrickWinner();
+  }
+
+  // Once everyone has played, highlight who takes the trick while it stays on the table.
+  // END_ROUND confirms it; the last trick of a set is only followed by END_SET, which does not say.
+  void _markTrickWinner() {
+    final game = this.game!;
+    final inPlay = game.playerOrder.where((p) => p.playerState != PlayerState.EXIT).toList();
+    if (inPlay.isEmpty || inPlay.any((p) => p.playedCard == null)) return;
+    final trick = inPlay.map((p) => p.playedCard!).toList();
+    game.trickWinner = inPlay[GameRules.trickWinnerIndex(trick, game.briscola?.seed)].nickname;
   }
 
   void handleEndRoundUpdate(EndRoundUpdate message) {
@@ -364,12 +383,15 @@ class ClientManager extends ChangeNotifier {
     });
     game.playerOrder = game.playersInOrder(message.nextPlayerOrderAndTaken.keys);
     game.round = message.nextRoundNumber;
+    // The winner leads the next trick, so comes first
+    game.trickWinner = message.nextPlayerOrderAndTaken.keys.firstOrNull;
 
     // Keep the finished trick on the table for a moment
     _pauseQueue(() {
       for (final p in game.players) {
         p.playedCard = null;
       }
+      game.trickWinner = null;
     });
   }
 
@@ -381,13 +403,15 @@ class ClientManager extends ChangeNotifier {
     final myNewScore = message.nextPlayerOrderAndScore[me.nickname];
     if (myNewScore != null) {
       // An exact bet always gains points, a missed one always loses them
-      lastSetResult = myNewScore > me.score ? SetResultAnimationState.win : SetResultAnimationState.loss;
+      lastSetDelta = myNewScore - me.score;
+      lastSetResult = lastSetDelta > 0 ? SetResultAnimationState.win : SetResultAnimationState.loss;
     }
     message.nextPlayerOrderAndScore.forEach((nickname, score) {
       game.playerNamed(nickname)?.score = score;
     });
     game.playerOrder = game.playersInOrder(message.nextPlayerOrderAndScore.keys);
     game.set = message.nextSetNumber;
+    game.setsPlayed = message.setsPlayed ?? game.setsPlayed + 1;
     game.round = 0;
 
     // Show the last trick and the set result, then clear the table for the next deal
@@ -396,8 +420,10 @@ class ClientManager extends ChangeNotifier {
         p
           ..playedCard = null
           ..bet = 0
+          ..hasBet = false
           ..roundsWon = 0;
       }
+      game.trickWinner = null;
       lastSetResult = SetResultAnimationState.none;
     });
   }
@@ -427,11 +453,17 @@ class ClientManager extends ChangeNotifier {
     if (game == null) return;
     game
       ..set = message.set
-      ..round = message.round;
+      ..round = message.round
+      ..setsPlayed = message.setsPlayed
+      ..maxHandSize = message.maxHandSize;
+    // A bet of 0 looks like no bet: once cards are being played, everyone has bet
+    final bettingOver = message.round > 0 || message.playedCards.isNotEmpty;
     for (final p in game.players) {
+      final bet = message.bets[p.nickname] ?? 0;
       p
         ..score = message.scores[p.nickname] ?? p.score
-        ..bet = message.bets[p.nickname] ?? 0
+        ..bet = bet
+        ..hasBet = bettingOver || bet > 0
         ..roundsWon = message.roundsWon[p.nickname] ?? 0
         ..playedCard = message.playedCards[p.nickname];
     }

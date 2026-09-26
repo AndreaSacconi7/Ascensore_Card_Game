@@ -1,183 +1,144 @@
 import 'package:flutter/material.dart';
-
 import 'package:provider/provider.dart';
 
 import '../client_manager.dart';
 import '../model/player.dart';
+import '../model/player_state.dart';
+import '../ui/components.dart';
+import '../ui/game_widgets.dart';
+import '../ui/theme.dart';
 
 class GameOverScreen extends StatelessWidget {
   const GameOverScreen({super.key});
 
+  static const _medals = [Color(0xFFF5C451), Color(0xFFC9D1E0), Color(0xFFD08A4E)];
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<ClientManager>(
-      builder: (context, clientManager, child) {
-        final game = clientManager.game;
-        if (game == null) {
-          return const Scaffold(body: SizedBox.shrink());
-        }
-        final sortedPlayers = _sortPlayersByScore(game.players);
-        final winner = sortedPlayers.isNotEmpty ? sortedPlayers.first : null;
-        final bool didWin = winner != null && winner == clientManager.mySelfPlayer;
+    final manager = context.watch<ClientManager>();
+    final game = manager.game;
+    final me = manager.mySelfPlayer;
+    if (game == null || me == null) return const SizedBox.shrink();
 
-        return Scaffold(
-          backgroundColor: didWin ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE),
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Spacer(flex: 1),
+    final ranking = List.of(game.players)..sort((a, b) => b.score.compareTo(a.score));
+    final myPosition = ranking.indexOf(me) + 1;
+    final won = myPosition == 1;
+    final textTheme = Theme.of(context).textTheme;
 
-                  _buildResultHeader(didWin),
-
-                  const SizedBox(height: 30),
-
-                  Text(
-                    "Classifica Finale",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  Expanded(
-                    flex: 4,
-                    child: ListView.builder(
-                      itemCount: sortedPlayers.length,
-                      itemBuilder: (context, index) {
-                        final player = sortedPlayers[index];
-                        final isWinner = index == 0;
-
-                        return _buildPlayerCard(player, index + 1, isWinner);
-                      },
-                    ),
-                  ),
-
-                  ElevatedButton(
-                    onPressed: () => context.read<ClientManager>().backToMenu(),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      backgroundColor: didWin ? Colors.green : Colors.red,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: const Text(
-                      "Torna al Menu",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildResultHeader(bool didWin) {
-    return Column(
-      children: [
-        Icon(
-          didWin ? Icons.emoji_events : Icons.sentiment_dissatisfied,
-          size: 80,
-          color: didWin ? Colors.amber : Colors.redAccent,
-        ),
-        const SizedBox(height: 10),
-        Text(
-          didWin ? "VITTORIA!" : "SCONFITTA",
-          style: TextStyle(
-            fontSize: 42,
-            fontWeight: FontWeight.w900,
-            color: didWin ? Colors.green[800] : Colors.red[800],
-            letterSpacing: 1.5,
-          ),
-        ),
-        Text(
-          didWin ? "Campione della partita!" : "Ritenta, andrà meglio.",
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPlayerCard(Player player, int rank, bool isFirst) {
-
-    return Transform.scale(
-      scale: isFirst ? 1.05 : 1.0,
-      child: Card(
-        elevation: isFirst ? 8 : 2,
-        margin: EdgeInsets.symmetric(vertical: isFirst ? 12 : 6, horizontal: 4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-          side: isFirst
-              ? const BorderSide(color: Colors.amber, width: 2)
-              : BorderSide.none,
-        ),
-        color: isFirst ? Colors.amber[50] : Colors.white,
+    return SafeArea(
+      child: ContentWidth(
+        maxWidth: 480,
         child: Padding(
-          padding: EdgeInsets.all(isFirst ? 20.0 : 16.0),
-          child: Row(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 30,
-                height: 30,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isFirst ? Colors.amber : Colors.grey[200],
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  "#$rank",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isFirst ? Colors.white : Colors.black54,
+              const Spacer(),
+              Center(
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: won ? AppColors.goldGradient : null,
+                    color: won ? null : AppColors.surfaceStrong,
+                    boxShadow: [if (won) BoxShadow(color: AppColors.gold.withValues(alpha: 0.5), blurRadius: 40)],
+                  ),
+                  child: Icon(
+                    won ? Icons.emoji_events_rounded : Icons.flag_rounded,
+                    size: 52,
+                    color: won ? AppColors.onGold : AppColors.textSecondary,
                   ),
                 ),
               ),
-              const SizedBox(width: 15),
-
-              Expanded(
-                child: Text(
-                  player.nickname,
-                  style: TextStyle(
-                    fontSize: isFirst ? 22 : 16,
-                    fontWeight: isFirst ? FontWeight.bold : FontWeight.normal,
-                      color: isFirst ? Colors.amber[800] : Colors.grey[700]
-                  ),
-                ),
-              ),
-
+              const SizedBox(height: 20),
+              Text(won ? 'Hai vinto!' : 'Partita finita', textAlign: TextAlign.center, style: textTheme.headlineMedium),
+              const SizedBox(height: 6),
               Text(
-                "${player.score} pt",
-                style: TextStyle(
-                  fontSize: isFirst ? 20 : 16,
-                  fontWeight: FontWeight.bold,
-                  color: isFirst ? Colors.amber[800] : Colors.grey[700],
+                won ? 'Sei arrivato in cima all\'ascensore.' : 'Ti sei classificato $myPosition° su ${ranking.length}.',
+                textAlign: TextAlign.center,
+                style: textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 28),
+              GlassPanel(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < ranking.length; i++)
+                      _RankingRow(
+                          position: i + 1,
+                          player: ranking[i],
+                          isMe: ranking[i] == me,
+                          medal: i < 3 ? _medals[i] : null),
+                  ],
                 ),
               ),
-
-              if (isFirst) ...[
-                const SizedBox(width: 10),
-                const Icon(Icons.star, color: Colors.amber),
-              ]
+              const Spacer(),
+              AppButton(
+                label: 'GIOCA ANCORA',
+                icon: Icons.replay_rounded,
+                onPressed: () {
+                  manager
+                    ..backToMenu()
+                    ..joinGame();
+                },
+              ),
+              const SizedBox(height: 12),
+              AppButton(label: 'Torna al menu', style: AppButtonStyle.secondary, onPressed: manager.backToMenu),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  List<Player> _sortPlayersByScore(List<Player> players) =>
-      List.of(players)..sort((a, b) => b.score.compareTo(a.score));
+class _RankingRow extends StatelessWidget {
+  final int position;
+  final Player player;
+  final bool isMe;
+  final Color? medal;
+
+  const _RankingRow({required this.position, required this.player, required this.isMe, this.medal});
+
+  @override
+  Widget build(BuildContext context) {
+    final left = player.playerState == PlayerState.EXIT;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isMe ? AppColors.gold.withValues(alpha: 0.12) : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.medium),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 30,
+            child: medal == null
+                ? Text('$position', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800))
+                : Icon(Icons.workspace_premium_rounded, color: medal),
+          ),
+          const SizedBox(width: 8),
+          PlayerAvatar(nickname: player.nickname, size: 34, faded: left),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              isMe ? '${player.nickname} (tu)' : player.nickname,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontWeight: isMe ? FontWeight.w800 : FontWeight.w600),
+            ),
+          ),
+          Text(
+            left ? 'uscito' : '${player.score} pt',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+              color: left ? AppColors.textMuted : (position == 1 ? AppColors.gold : AppColors.textPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

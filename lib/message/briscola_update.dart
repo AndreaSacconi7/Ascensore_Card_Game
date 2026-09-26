@@ -7,9 +7,8 @@ class BriscolaUpdate implements ExecutableInClient {
   final CardGame? briscolaCard;
 
   BriscolaUpdate.fromJson(Map<String, dynamic> json)
-      : briscolaCard = json['briscolaCard'] == null
-            ? null
-            : CardGame.fromJson(json['briscolaCard'] as Map<String, dynamic>);
+      : briscolaCard =
+            json['briscolaCard'] == null ? null : CardGame.fromJson(json['briscolaCard'] as Map<String, dynamic>);
 
   @override
   void execute({required ClientManager clientManager}) => clientManager.handleBriscolaUpdate(this);

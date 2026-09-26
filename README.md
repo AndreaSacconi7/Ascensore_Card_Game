@@ -3,9 +3,10 @@
 Real-time multiplayer client for **Ascensore**, a traditional Italian trick-taking card game, built with **Flutter** and talking to a **Java / Spring Boot** game server over **WebSockets**.
 
 <p align="center">
-  <img src="docs/screenshots/game_design.png" width="320" alt="Game screen UI design">
-  <br>
-  <em>Game screen — UI design mockup (Figma)</em>
+  <img src="docs/screenshots/menu.jpg" width="200" alt="Main menu">
+  <img src="docs/screenshots/bet.jpg" width="200" alt="Betting">
+  <img src="docs/screenshots/play.jpg" width="200" alt="Four-player trick">
+  <img src="docs/screenshots/trick.jpg" width="200" alt="Trick won">
 </p>
 
 ## The game
@@ -21,11 +22,15 @@ At the start of every set each player **bets exactly how many tricks they will t
 - **Automatic login** — the session is restored and refreshed on app start
 - **Reconnection** — a dropped connection is retried with backoff while a banner shows the state; the server keeps the seat for 60 seconds and replays the table (hand, briscola, bets, tricks, cards on the table, whose turn it is)
 - **Server-authoritative state** — the client never changes game state optimistically; it validates moves locally for instant feedback (must follow suit, last-bidder constraint) and applies only what the server confirms
-- Drag-and-drop cards, bet slider, animated trick and set results
+- **Elevator floor indicator** — the current hand size with its direction of travel and the set number (e.g. *5 ▲, 5/19*)
+- Tap-to-lift or drag-and-drop cards; cards you may not play (you must follow the lead seed) are dimmed
+- Betting sheet that crosses out the one bet the last player may not make
+- The trick winner's card glows before the table is cleared; points won or lost pop up at the end of each set
+- Rules sheet in-app; responsive layout for phones, tablets and desktop browsers
 
 ## Roadmap
 
-- **Special abilities** *(planned)* — power-up cards that let players make special moves during a game, shown in the mockup above:
+- **Special abilities** *(planned)* — power-up cards that let players make special moves during a game:
   - **Swap** *(Uno-style reverse card)* — exchange your hand with another player's
   - **Joker** — play a card with a value of your choice
 
@@ -48,8 +53,11 @@ flowchart LR
 - **Testable seams** — the socket (`GameConnection`) and Supabase (`AuthService`) sit behind interfaces, so `ClientManager` is tested with fakes in fake time: login and nicknames, trick and set pauses, reconnection mid-match, logout during a pause.
 - **Contract test against the real server** — `test/fixtures/real_match.jsonl` holds every message the real server sent to two players during a full match, including a dropped connection and the reconnection; both players' clients replay it and must end on the server's final scores.
 
+- **Design system** — colours, radii and component themes live in `lib/ui/theme.dart`; reusable pieces (glass panels, buttons, avatars, cards, the floor indicator) in `lib/ui/`. The game screen is split into small widgets under `lib/pages/game/`.
+
 ```
 lib/
+├── ui/        # theme and shared components
 ├── auth/      # AuthService (Supabase)
 ├── network/   # GameConnection (WebSocket), ServerLink (reconnection)
 ├── command/   # client → server commands
@@ -71,9 +79,17 @@ Without `SERVER_URL` the app connects to a local server (`ws://localhost:8080/ws
 flutter test
 ```
 
+**Design preview** — every screen with scripted data, no server or account needed (the screenshots above come from it):
+
+```bash
+flutter run -d chrome -t tool/design_preview.dart
+```
+
+Pick a screen with the `s` query parameter: `?s=login`, `nickname`, `menu`, `waiting`, `bet`, `play`, `trick`, `peak`, `setresult`, `gameover`, `reconnecting`.
+
 ## Known limitations
 
-- The UI mixes Italian and English strings; it is not localized yet.
+- The interface is in Italian only; it is not localized yet.
 - If a player leaves a match for good, the match ends for everyone (a server-side rule for now).
 
 ## Tech stack

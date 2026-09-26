@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'app_wrapper.dart';
+import 'app.dart';
 import 'auth/auth_service.dart';
 import 'client_manager.dart';
 import 'network/game_connection.dart';
@@ -12,9 +12,8 @@ import 'network/game_connection.dart';
 const _serverUrlOverride = String.fromEnvironment('SERVER_URL');
 
 // Defaults reach a local server from a browser or from the Android emulator
-Uri get _serverUrl => Uri.parse(_serverUrlOverride.isNotEmpty
-    ? _serverUrlOverride
-    : (kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws'));
+Uri get _serverUrl => Uri.parse(
+    _serverUrlOverride.isNotEmpty ? _serverUrlOverride : (kIsWeb ? 'ws://localhost:8080/ws' : 'ws://10.0.2.2:8080/ws'));
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,30 +33,7 @@ Future<void> main() async {
         auth: SupabaseAuthService(),
         connector: () => WebSocketGameConnection.connect(_serverUrl),
       ),
-      child: const MyApp(),
+      child: const AscensoreApp(),
     ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Ascensore',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-        ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.white),
-          bodyMedium: TextStyle(color: Colors.white),
-          bodySmall: TextStyle(color: Colors.white),
-        ),
-        useMaterial3: true,
-      ),
-      home: const AppWrapper(),
-    );
-  }
 }

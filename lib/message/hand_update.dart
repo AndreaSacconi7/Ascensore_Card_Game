@@ -6,9 +6,7 @@ class HandUpdate implements ExecutableInClient {
   final List<CardGame> handCards;
 
   HandUpdate.fromJson(Map<String, dynamic> json)
-      : handCards = (json['cards'] as List)
-            .map((card) => CardGame.fromJson(card as Map<String, dynamic>))
-            .toList();
+      : handCards = (json['cards'] as List).map((card) => CardGame.fromJson(card as Map<String, dynamic>)).toList();
 
   @override
   void execute({required ClientManager clientManager}) => clientManager.handleHandUpdate(this);

@@ -1,5 +1,1 @@
-enum SetResultAnimationState {
-  none,
-  win,
-  loss
-}
+enum SetResultAnimationState { none, win, loss }

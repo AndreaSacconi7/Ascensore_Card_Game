@@ -19,15 +19,34 @@ void main() {
     const samples = {
       'PLAYER_INFO_RESPONSE': {'nickname': 'alice', 'isLogged': true, 'needsNickname': false, 'inMatch': false},
       'JOIN_GAME_RESPONSE': {'nickname': 'alice', 'isJoined': true},
-      'STARTING_GAME': {'connectedPlayers': ['alice', 'bob']},
-      'HAND_UPDATE': {'cards': [{'seed': 'CUPS', 'value': 1}]},
-      'BRISCOLA_UPDATE': {'briscolaCard': {'seed': 'COINS', 'value': 7}},
+      'STARTING_GAME': {
+        'connectedPlayers': ['alice', 'bob']
+      },
+      'HAND_UPDATE': {
+        'cards': [
+          {'seed': 'CUPS', 'value': 1}
+        ]
+      },
+      'BRISCOLA_UPDATE': {
+        'briscolaCard': {'seed': 'COINS', 'value': 7}
+      },
       'PLAYER_STATE_UPDATE': {'nickname': 'alice', 'playerState': 'BET'},
       'SETTED_BET': {'nickname': 'alice', 'bet': 1},
-      'PLAYED_CARD': {'nickname': 'alice', 'playedCard': {'seed': 'CUPS', 'value': 1}},
-      'END_ROUND': {'nextRoundNumber': 1, 'nextPlayerOrderAndTaken': {'bob': 1, 'alice': 0}},
-      'END_SET': {'nextSetNumber': 2, 'nextPlayerOrderAndScore': {'bob': 20, 'alice': -10}},
-      'END_GAME': {'gameResult': {'bob': 120, 'alice': 80}},
+      'PLAYED_CARD': {
+        'nickname': 'alice',
+        'playedCard': {'seed': 'CUPS', 'value': 1}
+      },
+      'END_ROUND': {
+        'nextRoundNumber': 1,
+        'nextPlayerOrderAndTaken': {'bob': 1, 'alice': 0}
+      },
+      'END_SET': {
+        'nextSetNumber': 2,
+        'nextPlayerOrderAndScore': {'bob': 20, 'alice': -10}
+      },
+      'END_GAME': {
+        'gameResult': {'bob': 120, 'alice': 80}
+      },
       'PLAYER_EXIT_GAME': {'nickname': 'bob'},
       'TEXT_MESSAGE': {'text': 'It is not your turn to play'},
       'INFO_AFTER_RECONNECTION': {'set': 3, 'round': 1, 'scores': {}, 'bets': {}, 'roundsWon': {}, 'playedCards': {}},
@@ -79,7 +98,9 @@ void main() {
       'scores': {'alice': 30},
       'bets': {'alice': 1},
       'roundsWon': {'alice': 1},
-      'playedCards': {'bob': {'seed': 'SWORDS', 'value': 3}},
+      'playedCards': {
+        'bob': {'seed': 'SWORDS', 'value': 3}
+      },
     })) as InfoAfterReconnection;
     expect(info.set, 4);
     expect(info.playedCards['bob'], const CardGame(Seed.SWORDS, 3));

@@ -18,8 +18,7 @@ class Command {
 
   factory Command.setBet(int bet) => Command._('SET_BET', {'bet': bet});
 
-  factory Command.putCard(CardGame card) =>
-      Command._('PUT_CARD', {'seed': card.seed.name, 'value': card.value});
+  factory Command.putCard(CardGame card) => Command._('PUT_CARD', {'seed': card.seed.name, 'value': card.value});
 
   factory Command.logout() => const Command._('LOGOUT');
 

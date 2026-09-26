@@ -67,4 +67,31 @@ void main() {
       expect(card.imagePath, 'assets/cards/SWORDS_4.png');
     });
   });
+
+  group('GameRules.trickWinnerIndex', () {
+    test('ace, then three, beat the king of the same seed', () {
+      const trick = [CardGame(Seed.CUPS, 10), CardGame(Seed.CUPS, 3), CardGame(Seed.CUPS, 1)];
+      expect(GameRules.trickWinnerIndex(trick, Seed.SWORDS), 2);
+      expect(GameRules.trickWinnerIndex(trick.sublist(0, 2), Seed.SWORDS), 1);
+    });
+
+    test('any briscola beats the lead seed; other seeds never win', () {
+      const trick = [CardGame(Seed.CUPS, 1), CardGame(Seed.COINS, 1), CardGame(Seed.SWORDS, 2)];
+      expect(GameRules.trickWinnerIndex(trick, Seed.SWORDS), 2);
+      expect(GameRules.trickWinnerIndex(trick, null), 0);
+    });
+  });
+
+  group('GameRules.forbiddenBet', () {
+    test('only the last bettor has a forbidden bet', () {
+      final order = [Player('alice')..bet = 1, Player('bob')..bet = 0, Player('me')];
+      expect(GameRules.forbiddenBet(playerOrder: order, myNickname: 'me', cardsInHand: 3), 2);
+      expect(GameRules.forbiddenBet(playerOrder: order, myNickname: 'bob', cardsInHand: 3), isNull);
+    });
+
+    test('no forbidden bet when the others already bet more than the tricks', () {
+      final order = [Player('alice')..bet = 3, Player('me')];
+      expect(GameRules.forbiddenBet(playerOrder: order, myNickname: 'me', cardsInHand: 2), isNull);
+    });
+  });
 }

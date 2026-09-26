@@ -9,9 +9,13 @@ class EndSetUpdate implements ExecutableInClient {
   /// Hand size of the next set.
   final int nextSetNumber;
 
+  /// Sets completed so far; null from servers that do not send it.
+  final int? setsPlayed;
+
   EndSetUpdate.fromJson(Map<String, dynamic> json)
       : nextPlayerOrderAndScore = intMap(json['nextPlayerOrderAndScore']),
-        nextSetNumber = json['nextSetNumber'] as int;
+        nextSetNumber = json['nextSetNumber'] as int,
+        setsPlayed = json['setsPlayed'] as int?;
 
   @override
   void execute({required ClientManager clientManager}) => clientManager.handleEndSetUpdate(this);

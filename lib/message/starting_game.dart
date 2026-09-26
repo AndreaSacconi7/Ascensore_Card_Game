@@ -5,8 +5,12 @@ class StartingGame implements ExecutableInClient {
   /// Nicknames in betting order.
   final List<String> connectedPlayers;
 
+  /// Largest hand of the match: hands go 1..maxHandSize..1.
+  final int maxHandSize;
+
   StartingGame.fromJson(Map<String, dynamic> json)
-      : connectedPlayers = List<String>.from(json['connectedPlayers'] as List);
+      : connectedPlayers = List<String>.from(json['connectedPlayers'] as List),
+        maxHandSize = json['maxHandSize'] as int? ?? 10;
 
   @override
   void execute({required ClientManager clientManager}) => clientManager.handleStartingGame(this);

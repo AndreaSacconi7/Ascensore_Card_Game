@@ -6,6 +6,8 @@ import 'executable_in_client.dart';
 class InfoAfterReconnection implements ExecutableInClient {
   final int set;
   final int round;
+  final int setsPlayed;
+  final int maxHandSize;
   final Map<String, int> scores;
   final Map<String, int> bets;
   final Map<String, int> roundsWon;
@@ -16,6 +18,8 @@ class InfoAfterReconnection implements ExecutableInClient {
   InfoAfterReconnection.fromJson(Map<String, dynamic> json)
       : set = json['set'] as int? ?? 1,
         round = json['round'] as int? ?? 0,
+        setsPlayed = json['setsPlayed'] as int? ?? 0,
+        maxHandSize = json['maxHandSize'] as int? ?? 10,
         scores = intMap(json['scores']),
         bets = intMap(json['bets']),
         roundsWon = intMap(json['roundsWon']),

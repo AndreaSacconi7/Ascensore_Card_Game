@@ -3,8 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../client_manager.dart';
 import '../message/player_info_response.dart';
-import '../widgets/form_button.dart';
-import '../widgets/modern_text_field.dart';
+import '../ui/components.dart';
+import '../ui/game_widgets.dart';
+import '../ui/theme.dart';
 
 /// Shown once per account: the public name other players see (never the email address).
 class ChooseNicknamePage extends StatefulWidget {
@@ -22,6 +23,12 @@ class _ChooseNicknamePageState extends State<ChooseNicknamePage> {
   String? _localError;
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() => setState(() => _localError = null));
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
@@ -33,79 +40,78 @@ class _ChooseNicknamePageState extends State<ChooseNicknamePage> {
       setState(() => _localError = 'Da 3 a 16 caratteri: lettere, numeri o _');
       return;
     }
-    setState(() => _localError = null);
     manager.submitNickname(nickname);
   }
 
-  String? _serverErrorText(String? code) {
-    switch (code) {
-      case PlayerInfoResponse.nicknameTaken:
-        return 'Nickname già in uso, scegline un altro';
-      case PlayerInfoResponse.nicknameInvalid:
-        return 'Da 3 a 16 caratteri: lettere, numeri o _';
-      default:
-        return null;
-    }
-  }
+  String? _serverErrorText(String? code) => switch (code) {
+        PlayerInfoResponse.nicknameTaken => 'Questo nickname è già in uso, scegline un altro.',
+        PlayerInfoResponse.nicknameInvalid => 'Da 3 a 16 caratteri: lettere, numeri o _',
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context) {
     final manager = context.watch<ClientManager>();
     final error = _localError ?? _serverErrorText(manager.nicknameError);
+    final nickname = _controller.text.trim();
 
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF1D2671), Color(0xFF0A113E)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'SCEGLI UN NICKNAME',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
+    return SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: ContentWidth(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: PlayerAvatar(nickname: nickname.isEmpty ? '?' : nickname, size: 72),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Come ti chiamano al tavolo?',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Il nickname è l\'unica cosa che gli altri giocatori vedono di te.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 28),
+                GlassPanel(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: _controller,
+                        maxLength: 16,
+                        autofocus: true,
+                        onSubmitted: (_) => _submit(manager),
+                        decoration: InputDecoration(
+                          hintText: 'Nickname',
+                          prefixIcon: const Icon(Icons.person_outline_rounded),
+                          counterStyle: const TextStyle(color: AppColors.textMuted),
+                          errorText: error,
+                          errorMaxLines: 2,
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      AppButton(
+                        label: 'CONTINUA',
+                        loading: manager.submittingNickname,
+                        onPressed: () => _submit(manager),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'È il nome che vedranno gli altri giocatori.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-                  ),
-                  const SizedBox(height: 30),
-                  ModernTextField(
-                    controller: _controller,
-                    hintText: 'Nickname',
-                    icon: Icons.person_outline,
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 8),
-                    Text(error, textAlign: TextAlign.center, style: TextStyle(color: Colors.red[200])),
-                  ],
-                  const SizedBox(height: 24),
-                  FormButton(
-                    text: 'CONFERMA',
-                    isPrimary: true,
-                    onPressed: manager.submittingNickname ? null : () => _submit(manager),
-                  ),
-                  TextButton(
-                    onPressed: manager.logOut,
-                    child: Text('Esci', style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                AppButton(
+                  label: 'Esci',
+                  style: AppButtonStyle.ghost,
+                  onPressed: manager.logOut,
+                ),
+              ],
             ),
           ),
         ),

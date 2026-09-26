@@ -52,214 +52,302 @@ void main() {
     async.flushMicrotasks();
     loggedIn(async, 'alice');
     manager.joinGame();
-    server(async, 'STARTING_GAME', {'connectedPlayers': ['alice', 'bob']});
-    server(async, 'HAND_UPDATE', {'cards': [card('CUPS', 1), card('SWORDS', 5)]});
+    server(async, 'STARTING_GAME', {
+      'connectedPlayers': ['alice', 'bob']
+    });
+    server(async, 'HAND_UPDATE', {
+      'cards': [card('CUPS', 1), card('SWORDS', 5)]
+    });
     server(async, 'BRISCOLA_UPDATE', {'briscolaCard': card('COINS', 7)});
   }
 
   group('login', () {
-    test('a saved session connects and identifies the player', () => run((async) {
-          manager.checkLoginStatus();
-          async.flushMicrotasks();
+    test(
+        'a saved session connects and identifies the player',
+        () => run((async) {
+              manager.checkLoginStatus();
+              async.flushMicrotasks();
 
-          expect(connector.last.sent.single['commandType'], 'PLAYER_INFO_REQUEST');
-          expect(connector.last.sent.single['executable']['token'], 'token');
-          loggedIn(async, 'alice');
-          expect(manager.currentScreen, AppScreenState.mainMenu);
-          expect(manager.mySelfPlayer!.nickname, 'alice');
-        }));
+              expect(connector.last.sent.single['commandType'], 'PLAYER_INFO_REQUEST');
+              expect(connector.last.sent.single['executable']['token'], 'token');
+              loggedIn(async, 'alice');
+              expect(manager.currentScreen, AppScreenState.mainMenu);
+              expect(manager.mySelfPlayer!.nickname, 'alice');
+            }));
 
-    test('a new account chooses a nickname until the server accepts one', () => run((async) {
-          manager.checkLoginStatus();
-          async.flushMicrotasks();
-          server(async, 'PLAYER_INFO_RESPONSE',
-              {'nickname': '', 'isLogged': false, 'needsNickname': true, 'error': 'NICKNAME_MISSING'});
-          expect(manager.currentScreen, AppScreenState.chooseNickname);
-          expect(manager.nicknameError, isNull);
+    test(
+        'a new account chooses a nickname until the server accepts one',
+        () => run((async) {
+              manager.checkLoginStatus();
+              async.flushMicrotasks();
+              server(async, 'PLAYER_INFO_RESPONSE',
+                  {'nickname': '', 'isLogged': false, 'needsNickname': true, 'error': 'NICKNAME_MISSING'});
+              expect(manager.currentScreen, AppScreenState.chooseNickname);
+              expect(manager.nicknameError, isNull);
 
-          manager.submitNickname('alice');
-          async.flushMicrotasks();
-          expect(connector.last.sent.last['executable']['nickname'], 'alice');
-          server(async, 'PLAYER_INFO_RESPONSE',
-              {'nickname': '', 'isLogged': false, 'needsNickname': true, 'error': 'NICKNAME_TAKEN'});
-          expect(manager.nicknameError, PlayerInfoResponse.nicknameTaken);
+              manager.submitNickname('alice');
+              async.flushMicrotasks();
+              expect(connector.last.sent.last['executable']['nickname'], 'alice');
+              server(async, 'PLAYER_INFO_RESPONSE',
+                  {'nickname': '', 'isLogged': false, 'needsNickname': true, 'error': 'NICKNAME_TAKEN'});
+              expect(manager.nicknameError, PlayerInfoResponse.nicknameTaken);
 
-          manager.submitNickname('alice_2');
-          async.flushMicrotasks();
-          loggedIn(async, 'alice_2');
-          expect(manager.currentScreen, AppScreenState.mainMenu);
-          expect(manager.nicknameError, isNull);
-        }));
+              manager.submitNickname('alice_2');
+              async.flushMicrotasks();
+              loggedIn(async, 'alice_2');
+              expect(manager.currentScreen, AppScreenState.mainMenu);
+              expect(manager.nicknameError, isNull);
+            }));
 
-    test('a refused token signs the player out', () => run((async) {
-          manager.checkLoginStatus();
-          async.flushMicrotasks();
-          server(async, 'PLAYER_INFO_RESPONSE', {'nickname': '', 'isLogged': false, 'error': 'INVALID_TOKEN'});
-          async.flushMicrotasks();
+    test(
+        'a refused token signs the player out',
+        () => run((async) {
+              manager.checkLoginStatus();
+              async.flushMicrotasks();
+              server(async, 'PLAYER_INFO_RESPONSE', {'nickname': '', 'isLogged': false, 'error': 'INVALID_TOKEN'});
+              async.flushMicrotasks();
 
-          expect(auth.signedOut, isTrue);
-          expect(manager.currentScreen, AppScreenState.login);
-          expect(manager.authState, AuthenticationState.unauthenticated);
-          expect(manager.authError, isNotNull);
-        }));
+              expect(auth.signedOut, isTrue);
+              expect(manager.currentScreen, AppScreenState.login);
+              expect(manager.authState, AuthenticationState.unauthenticated);
+              expect(manager.authError, isNotNull);
+            }));
   });
 
   group('match', () {
-    test('commands carry no player name: the server knows who is on the socket', () => run((async) {
-          startMatch(async);
-          manager.setBet(1);
-          manager.putCard(const CardGame(Seed.CUPS, 1));
+    test(
+        'commands carry no player name: the server knows who is on the socket',
+        () => run((async) {
+              startMatch(async);
+              manager.setBet(1);
+              manager.putCard(const CardGame(Seed.CUPS, 1));
 
-          expect(connector.last.sent[connector.last.sent.length - 2], {
-            'commandType': 'SET_BET',
-            'executable': {'bet': 1},
-          });
-          expect(connector.last.sent.last, {
-            'commandType': 'PUT_CARD',
-            'executable': {'seed': 'CUPS', 'value': 1},
-          });
-        }));
+              expect(connector.last.sent[connector.last.sent.length - 2], {
+                'commandType': 'SET_BET',
+                'executable': {'bet': 1},
+              });
+              expect(connector.last.sent.last, {
+                'commandType': 'PUT_CARD',
+                'executable': {'seed': 'CUPS', 'value': 1},
+              });
+            }));
 
-    test('playing a card replaces the hand instead of mutating it', () => run((async) {
-          startMatch(async);
-          final before = manager.mySelfPlayer!.handCards;
+    test(
+        'playing a card replaces the hand instead of mutating it',
+        () => run((async) {
+              startMatch(async);
+              final before = manager.mySelfPlayer!.handCards;
 
-          server(async, 'PLAYED_CARD', {'nickname': 'alice', 'playedCard': card('CUPS', 1)});
+              server(async, 'PLAYED_CARD', {'nickname': 'alice', 'playedCard': card('CUPS', 1)});
 
-          expect(identical(before, manager.mySelfPlayer!.handCards), isFalse);
-          expect(manager.mySelfPlayer!.handCards, [const CardGame(Seed.SWORDS, 5)]);
-        }));
+              expect(identical(before, manager.mySelfPlayer!.handCards), isFalse);
+              expect(manager.mySelfPlayer!.handCards, [const CardGame(Seed.SWORDS, 5)]);
+            }));
 
-    test('the finished trick stays on the table and later messages wait their turn', () => run((async) {
-          startMatch(async);
-          server(async, 'PLAYED_CARD', {'nickname': 'alice', 'playedCard': card('CUPS', 1)});
-          server(async, 'PLAYED_CARD', {'nickname': 'bob', 'playedCard': card('CUPS', 2)});
-          server(async, 'END_ROUND', {'nextRoundNumber': 1, 'nextPlayerOrderAndTaken': {'alice': 1, 'bob': 0}});
-          server(async, 'PLAYER_STATE_UPDATE', {'nickname': 'alice', 'playerState': 'PUT'});
+    test(
+        'the finished trick stays on the table and later messages wait their turn',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'PLAYED_CARD', {'nickname': 'alice', 'playedCard': card('CUPS', 1)});
+              server(async, 'PLAYED_CARD', {'nickname': 'bob', 'playedCard': card('CUPS', 2)});
+              server(async, 'END_ROUND', {
+                'nextRoundNumber': 1,
+                'nextPlayerOrderAndTaken': {'alice': 1, 'bob': 0}
+              });
+              server(async, 'PLAYER_STATE_UPDATE', {'nickname': 'alice', 'playerState': 'PUT'});
 
-          final alice = manager.game!.playerNamed('alice')!;
-          expect(alice.roundsWon, 1);
-          expect(alice.playedCard, isNotNull, reason: 'trick still shown');
-          expect(alice.playerState, isNot(PlayerState.PUT), reason: 'queued behind the pause');
+              final alice = manager.game!.playerNamed('alice')!;
+              expect(alice.roundsWon, 1);
+              expect(alice.playedCard, isNotNull, reason: 'trick still shown');
+              expect(alice.playerState, isNot(PlayerState.PUT), reason: 'queued behind the pause');
 
-          async.elapse(displayTime);
-          expect(alice.playedCard, isNull);
-          expect(alice.playerState, PlayerState.PUT);
-          expect(manager.game!.round, 1);
-          expect(manager.game!.set, 1, reason: 'a trick does not change the hand size');
-        }));
+              async.elapse(displayTime);
+              expect(alice.playedCard, isNull);
+              expect(alice.playerState, PlayerState.PUT);
+              expect(manager.game!.round, 1);
+              expect(manager.game!.set, 1, reason: 'a trick does not change the hand size');
+            }));
 
-    test('end of set shows the result, then clears bets for the next deal', () => run((async) {
-          startMatch(async);
-          server(async, 'SETTED_BET', {'nickname': 'alice', 'bet': 1});
-          server(async, 'END_SET', {'nextSetNumber': 2, 'nextPlayerOrderAndScore': {'bob': -10, 'alice': 20}});
+    test(
+        'end of set shows the result, then clears bets for the next deal',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'SETTED_BET', {'nickname': 'alice', 'bet': 1});
+              server(async, 'END_SET', {
+                'nextSetNumber': 2,
+                'nextPlayerOrderAndScore': {'bob': -10, 'alice': 20}
+              });
 
-          expect(manager.lastSetResult, SetResultAnimationState.win);
-          expect(manager.game!.playerOrder.map((p) => p.nickname), ['bob', 'alice']);
-          expect(manager.game!.set, 2);
+              expect(manager.lastSetResult, SetResultAnimationState.win);
+              expect(manager.game!.playerOrder.map((p) => p.nickname), ['bob', 'alice']);
+              expect(manager.game!.set, 2);
 
-          async.elapse(displayTime);
-          expect(manager.lastSetResult, SetResultAnimationState.none);
-          expect(manager.game!.playerNamed('alice')!.bet, 0);
-          expect(manager.game!.playerNamed('alice')!.score, 20);
-        }));
+              async.elapse(displayTime);
+              expect(manager.lastSetResult, SetResultAnimationState.none);
+              expect(manager.game!.playerNamed('alice')!.bet, 0);
+              expect(manager.game!.playerNamed('alice')!.score, 20);
+            }));
 
-    test('logging out during a pause cancels it', () => run((async) {
-          startMatch(async);
-          server(async, 'END_ROUND', {'nextRoundNumber': 1, 'nextPlayerOrderAndTaken': {'alice': 1, 'bob': 0}});
+    test(
+        'the match knows where it is in the 1..10..1 sequence',
+        () => run((async) {
+              startMatch(async);
+              expect(manager.game!.maxHandSize, 10);
+              expect(manager.game!.setNumber, 1);
+              expect(manager.game!.totalSets, 19);
 
-          manager.logOut();
-          async.flushMicrotasks();
-          async.elapse(displayTime * 2);
+              server(async, 'END_SET', {
+                'nextSetNumber': 9,
+                'setsPlayed': 10,
+                'nextPlayerOrderAndScore': {'alice': 0, 'bob': 0}
+              });
+              expect(manager.game!.set, 9);
+              expect(manager.game!.setNumber, 11);
+              expect(manager.game!.goingUp, isFalse);
+            }));
 
-          expect(manager.game, isNull);
-          expect(manager.currentScreen, AppScreenState.login);
-          expect(connector.connections, hasLength(1), reason: 'no reconnection after logout');
-        }));
+    test(
+        'the winner of a complete trick is highlighted until the table is cleared',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'PLAYED_CARD', {'nickname': 'alice', 'playedCard': card('CUPS', 1)});
+              expect(manager.game!.trickWinner, isNull, reason: 'trick not complete yet');
+              server(async, 'PLAYED_CARD', {'nickname': 'bob', 'playedCard': card('COINS', 2)});
+              expect(manager.game!.trickWinner, 'bob',
+                  reason: 'coins is briscola (coins 7), so any coin beats the ace of cups');
+              server(async, 'END_ROUND', {
+                'nextRoundNumber': 1,
+                'nextPlayerOrderAndTaken': {'bob': 1, 'alice': 0}
+              });
 
-    test('a server rejection is shown to the player', () => run((async) {
-          startMatch(async);
-          server(async, 'TEXT_MESSAGE', {'text': 'It is not your turn to play'});
+              async.elapse(displayTime);
+              expect(manager.game!.trickWinner, isNull);
+            }));
 
-          expect(manager.consumeNotice(), 'It is not your turn to play');
-          expect(manager.consumeNotice(), isNull);
-        }));
+    test(
+        'logging out during a pause cancels it',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'END_ROUND', {
+                'nextRoundNumber': 1,
+                'nextPlayerOrderAndTaken': {'alice': 1, 'bob': 0}
+              });
+
+              manager.logOut();
+              async.flushMicrotasks();
+              async.elapse(displayTime * 2);
+
+              expect(manager.game, isNull);
+              expect(manager.currentScreen, AppScreenState.login);
+              expect(connector.connections, hasLength(1), reason: 'no reconnection after logout');
+            }));
+
+    test(
+        'a server rejection is shown to the player',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'TEXT_MESSAGE', {'text': 'It is not your turn to play'});
+
+              expect(manager.consumeNotice(), 'It is not your turn to play');
+              expect(manager.consumeNotice(), isNull);
+            }));
   });
 
   group('connection loss', () {
-    test('a dropped connection reconnects and resumes the match', () => run((async) {
-          startMatch(async);
-          connector.last.drop();
-          async.flushMicrotasks();
+    test(
+        'a dropped connection reconnects and resumes the match',
+        () => run((async) {
+              startMatch(async);
+              connector.last.drop();
+              async.flushMicrotasks();
 
-          expect(auth.signedOut, isFalse, reason: 'a network drop is not a logout');
-          expect(manager.linkState, LinkState.reconnecting);
+              expect(auth.signedOut, isFalse, reason: 'a network drop is not a logout');
+              expect(manager.linkState, LinkState.reconnecting);
 
-          async.elapse(const Duration(seconds: 1));
-          expect(connector.connections, hasLength(2));
-          expect(connector.last.sentTypes, ['PLAYER_INFO_REQUEST']);
+              async.elapse(const Duration(seconds: 1));
+              expect(connector.connections, hasLength(2));
+              expect(connector.last.sentTypes, ['PLAYER_INFO_REQUEST']);
 
-          loggedIn(async, 'alice', inMatch: true);
-          expect(manager.currentScreen, AppScreenState.inGame);
-          server(async, 'STARTING_GAME', {'connectedPlayers': ['bob', 'alice']});
-          server(async, 'HAND_UPDATE', {'cards': [card('SWORDS', 5)]});
-          server(async, 'INFO_AFTER_RECONNECTION', {
-            'set': 4,
-            'round': 1,
-            'scores': {'alice': 30, 'bob': 10},
-            'bets': {'alice': 2, 'bob': 1},
-            'roundsWon': {'alice': 1, 'bob': 0},
-            'playedCards': {'bob': card('CUPS', 9)},
-          });
-          server(async, 'PLAYER_STATE_UPDATE', {'nickname': 'alice', 'playerState': 'PUT'});
+              loggedIn(async, 'alice', inMatch: true);
+              expect(manager.currentScreen, AppScreenState.inGame);
+              server(async, 'STARTING_GAME', {
+                'connectedPlayers': ['bob', 'alice']
+              });
+              server(async, 'HAND_UPDATE', {
+                'cards': [card('SWORDS', 5)]
+              });
+              server(async, 'INFO_AFTER_RECONNECTION', {
+                'set': 4,
+                'round': 1,
+                'scores': {'alice': 30, 'bob': 10},
+                'bets': {'alice': 2, 'bob': 1},
+                'roundsWon': {'alice': 1, 'bob': 0},
+                'playedCards': {'bob': card('CUPS', 9)},
+              });
+              server(async, 'PLAYER_STATE_UPDATE', {'nickname': 'alice', 'playerState': 'PUT'});
 
-          final game = manager.game!;
-          expect(game.set, 4);
-          expect(game.playerNamed('bob')!.playedCard, const CardGame(Seed.CUPS, 9));
-          expect(game.playerNamed('alice')!.bet, 2);
-          expect(manager.mySelfPlayer!.playerState, PlayerState.PUT);
-          expect(manager.linkState, LinkState.connected);
-        }));
+              final game = manager.game!;
+              expect(game.set, 4);
+              expect(game.playerNamed('bob')!.playedCard, const CardGame(Seed.CUPS, 9));
+              expect(game.playerNamed('alice')!.bet, 2);
+              expect(manager.mySelfPlayer!.playerState, PlayerState.PUT);
+              expect(manager.linkState, LinkState.connected);
+            }));
 
-    test('retries until the server is back', () => run((async) {
-          startMatch(async);
-          connector.serverDown = true;
-          connector.last.drop();
-          async.flushMicrotasks();
+    test(
+        'retries until the server is back',
+        () => run((async) {
+              startMatch(async);
+              connector.serverDown = true;
+              connector.last.drop();
+              async.flushMicrotasks();
 
-          async.elapse(const Duration(seconds: 5));
-          expect(manager.linkState, LinkState.reconnecting);
+              async.elapse(const Duration(seconds: 5));
+              expect(manager.linkState, LinkState.reconnecting);
 
-          connector.serverDown = false;
-          async.elapse(const Duration(seconds: 1));
-          expect(manager.linkState, LinkState.connected);
-        }));
+              connector.serverDown = false;
+              async.elapse(const Duration(seconds: 1));
+              expect(manager.linkState, LinkState.connected);
+            }));
 
-    test('messages queued behind a login response are not lost', () => run((async) {
-          startMatch(async);
-          // A pause is running when the reconnection replay arrives
-          server(async, 'END_ROUND', {'nextRoundNumber': 1, 'nextPlayerOrderAndTaken': {'alice': 1, 'bob': 0}});
-          loggedIn(async, 'alice', inMatch: true);
-          server(async, 'STARTING_GAME', {'connectedPlayers': ['alice', 'bob']});
-          server(async, 'INFO_AFTER_RECONNECTION', {'set': 2, 'round': 0, 'scores': {'alice': 20}});
+    test(
+        'messages queued behind a login response are not lost',
+        () => run((async) {
+              startMatch(async);
+              // A pause is running when the reconnection replay arrives
+              server(async, 'END_ROUND', {
+                'nextRoundNumber': 1,
+                'nextPlayerOrderAndTaken': {'alice': 1, 'bob': 0}
+              });
+              loggedIn(async, 'alice', inMatch: true);
+              server(async, 'STARTING_GAME', {
+                'connectedPlayers': ['alice', 'bob']
+              });
+              server(async, 'INFO_AFTER_RECONNECTION', {
+                'set': 2,
+                'round': 0,
+                'scores': {'alice': 20}
+              });
 
-          async.elapse(displayTime);
-          expect(manager.game, isNotNull);
-          expect(manager.game!.set, 2);
-          expect(manager.game!.playerNamed('alice')!.score, 20);
-        }));
+              async.elapse(displayTime);
+              expect(manager.game, isNotNull);
+              expect(manager.game!.set, 2);
+              expect(manager.game!.playerNamed('alice')!.score, 20);
+            }));
 
-    test('a match that ended while offline returns to the menu', () => run((async) {
-          startMatch(async);
-          connector.last.drop();
-          async.flushMicrotasks();
-          async.elapse(const Duration(seconds: 1));
+    test(
+        'a match that ended while offline returns to the menu',
+        () => run((async) {
+              startMatch(async);
+              connector.last.drop();
+              async.flushMicrotasks();
+              async.elapse(const Duration(seconds: 1));
 
-          loggedIn(async, 'alice', inMatch: false);
+              loggedIn(async, 'alice', inMatch: false);
 
-          expect(manager.currentScreen, AppScreenState.mainMenu);
-          expect(manager.game, isNull);
-          expect(manager.consumeNotice(), isNotNull);
-        }));
+              expect(manager.currentScreen, AppScreenState.mainMenu);
+              expect(manager.game, isNull);
+              expect(manager.consumeNotice(), isNotNull);
+            }));
   });
 }

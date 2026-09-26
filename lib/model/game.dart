@@ -17,7 +17,27 @@ class Game {
   /// Tricks completed in the current set.
   int round = 0;
 
-  Game(this.players) : playerOrder = List.of(players);
+  /// Largest hand of the match: hands go 1..maxHandSize..1.
+  int maxHandSize;
+
+  /// Sets completed before the current one.
+  int setsPlayed = 0;
+
+  /// Who takes the trick on the table, while it is shown before being cleared.
+  String? trickWinner;
+
+  Game(this.players, {this.maxHandSize = 10}) : playerOrder = List.of(players);
+
+  /// Position of the current set in the match, from 1 to [totalSets].
+  int get setNumber => setsPlayed + 1;
+
+  int get totalSets => 2 * maxHandSize - 1;
+
+  /// The hand size is still growing (the elevator goes up).
+  bool get goingUp => setNumber < maxHandSize;
+
+  /// The set with the largest hand: the card leading each trick sets the briscola.
+  bool get isPeakSet => set == maxHandSize;
 
   Player? playerNamed(String nickname) {
     for (final p in players) {
@@ -27,6 +47,5 @@ class Game {
   }
 
   /// Players named by [nicknames], in that order; unknown names are skipped.
-  List<Player> playersInOrder(Iterable<String> nicknames) =>
-      nicknames.map(playerNamed).whereType<Player>().toList();
+  List<Player> playersInOrder(Iterable<String> nicknames) => nicknames.map(playerNamed).whereType<Player>().toList();
 }
