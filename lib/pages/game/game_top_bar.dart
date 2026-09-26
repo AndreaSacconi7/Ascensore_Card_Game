@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:provider/provider.dart';
+
+import '../../client_manager.dart';
 import '../../model/game.dart';
+import '../../model/player_state.dart';
 import '../../ui/game_widgets.dart';
 import '../../ui/theme.dart';
 import '../rules_sheet.dart';
@@ -54,8 +58,44 @@ class GameTopBar extends StatelessWidget {
           onPressed: () => showRulesSheet(context),
           icon: const Icon(Icons.help_outline_rounded, color: AppColors.textSecondary),
         ),
+        IconButton(
+          tooltip: 'Abbandona la partita',
+          onPressed: () => _confirmLeave(context),
+          icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
+        ),
       ],
     );
+  }
+
+  Future<void> _confirmLeave(BuildContext context) async {
+    final others = game.players.where((p) => p.playerState != PlayerState.EXIT).length - 1;
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.sheet,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.large)),
+        title: const Text('Abbandonare la partita?'),
+        content: Text(
+          others <= 1
+              ? 'Non potrai rientrare e la partita finirà: vincerà l\'altro giocatore.'
+              : 'Non potrai rientrare. Gli altri giocatori continueranno senza di te.',
+          style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Resta', style: TextStyle(color: AppColors.textPrimary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Abbandona', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w800)),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && context.mounted) {
+      context.read<ClientManager>().leaveGame();
+    }
   }
 
   static String _seedName(String seed) => switch (seed) {

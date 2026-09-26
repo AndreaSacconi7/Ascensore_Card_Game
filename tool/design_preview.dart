@@ -3,7 +3,7 @@
 //   flutter build web -t tool/design_preview.dart -o /tmp/preview
 //   open <served preview>/?s=play
 //
-// Scenarios: login, nickname, menu, waiting, bet, bet10, play, trick, peak, setresult, gameover, reconnecting.
+// Scenarios: login, nickname, menu, waiting, bet, bet10, play, left, trick, peak, setresult, gameover, reconnecting.
 import 'dart:async';
 
 import 'package:ascensore_client/app.dart';
@@ -153,6 +153,20 @@ Future<void> main() async {
       await send('BRISCOLA_UPDATE');
       await send('SETTED_BET', {'nickname': 'bob', 'bet': 4});
       await send('PLAYER_STATE_UPDATE', {'nickname': 'andrea', 'playerState': 'BET'});
+    case 'left':
+      // Four players, Dave has left: the match goes on with three
+      await start(['carol', 'dave', 'andrea', 'bob'],
+          setsPlayed: 4, handSize: 5, points: {'carol': 40, 'dave': 20, 'andrea': 50, 'bob': -10});
+      await send('HAND_UPDATE', {
+        'cards': [card('CUPS', 3), card('COINS', 10), card('CUPS', 8), card('SWORDS', 1), card('STICKS', 5)],
+      });
+      await send('BRISCOLA_UPDATE', {'briscolaCard': card('SWORDS', 6)});
+      for (final (p, bet) in [('carol', 2), ('dave', 1), ('andrea', 2), ('bob', 1)]) {
+        await send('SETTED_BET', {'nickname': p, 'bet': bet});
+      }
+      await send('PLAYED_CARD', {'nickname': 'carol', 'playedCard': card('CUPS', 10)});
+      await send('PLAYER_EXIT_GAME', {'nickname': 'dave'});
+      await send('PLAYER_STATE_UPDATE', {'nickname': 'andrea', 'playerState': 'PUT'});
     case 'setresult':
       await start(['bob', 'andrea'], setsPlayed: 5, handSize: 6);
       await send('SETTED_BET', {'nickname': 'andrea', 'bet': 2});

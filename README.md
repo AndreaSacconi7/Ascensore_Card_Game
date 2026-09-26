@@ -19,6 +19,7 @@ At the start of every set each player **bets exactly how many tricks they will t
 - **Real-time multiplayer** over a persistent WebSocket connection; runs on Android, iOS and the web
 - **Authentication with Supabase** (email/password, PKCE flow); the access token is sent to the game server, which verifies it independently
 - **2, 3 or 4 players** — pick the match size in the menu; a waiting room shows who has joined and the free seats, and you can leave the queue
+- **Leave at any time** — after a confirmation; the others play on without you (with two players, the other one wins)
 - **Public nicknames** — players choose a unique nickname on first login; the email address is never shown to other players
 - **Automatic login** — the session is restored and refreshed on app start
 - **Reconnection** — a dropped connection is retried with backoff while a banner shows the state; the server keeps the seat for 60 seconds and replays the table (hand, briscola, bets, tricks, cards on the table, whose turn it is)
@@ -86,12 +87,11 @@ flutter test
 flutter run -d chrome -t tool/design_preview.dart
 ```
 
-Pick a screen with the `s` query parameter: `?s=login`, `nickname`, `menu`, `waiting`, `bet`, `bet10`, `play`, `trick`, `peak`, `setresult`, `gameover`, `reconnecting`.
+Pick a screen with the `s` query parameter: `?s=login`, `nickname`, `menu`, `waiting`, `bet`, `bet10`, `play`, `left`, `trick`, `peak`, `setresult`, `gameover`, `reconnecting`.
 
 ## Known limitations
 
 - The interface is in Italian only; it is not localized yet.
-- If a player leaves a match for good, the match ends for everyone (a server-side rule for now).
 
 ## Tech stack
 

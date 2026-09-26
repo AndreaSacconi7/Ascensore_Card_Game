@@ -261,7 +261,7 @@ void main() {
               loggedIn(async, 'alice');
               manager.joinGame(players: 4);
 
-              manager.leaveQueue();
+              manager.leaveGame();
 
               expect(connector.last.sentTypes.last, 'LEAVE_GAME_REQUEST');
               expect(manager.currentScreen, AppScreenState.mainMenu);
@@ -295,6 +295,36 @@ void main() {
 
               expect(manager.consumeNotice(), 'It is not your turn to play');
               expect(manager.consumeNotice(), isNull);
+            }));
+  });
+
+  group('leaving', () {
+    test(
+        'leaving a match tells the server and goes back to the menu',
+        () => run((async) {
+              startMatch(async);
+
+              manager.leaveGame();
+
+              expect(connector.last.sentTypes.last, 'LEAVE_GAME_REQUEST');
+              expect(manager.currentScreen, AppScreenState.mainMenu);
+              expect(manager.game, isNull);
+              expect(manager.consumeNotice(), isNotNull);
+            }));
+
+    test(
+        'an opponent leaving is taken off the table and out of the turn order',
+        () => run((async) {
+              startMatch(async);
+              server(async, 'PLAYED_CARD', {'nickname': 'bob', 'playedCard': card('CUPS', 4)});
+
+              server(async, 'PLAYER_EXIT_GAME', {'nickname': 'bob'});
+
+              final bob = manager.game!.playerNamed('bob')!;
+              expect(bob.playerState, PlayerState.EXIT);
+              expect(bob.playedCard, isNull);
+              expect(manager.game!.playerOrder.map((p) => p.nickname), ['alice']);
+              expect(manager.consumeNotice(), contains('bob'));
             }));
   });
 

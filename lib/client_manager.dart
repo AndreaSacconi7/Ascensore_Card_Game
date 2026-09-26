@@ -205,10 +205,15 @@ class ClientManager extends ChangeNotifier {
     _link.send(Command.joinGame(matchSize).toJson());
   }
 
-  /// Leaves matchmaking and goes back to the menu.
-  void leaveQueue() {
+  /// Leaves matchmaking, or the match in progress for good, and goes back to the menu.
+  void leaveGame() {
+    final leftMatch = game != null;
     _link.send(Command.leaveGame().toJson());
     backToMenu();
+    if (leftMatch) {
+      serverNotice = 'Hai abbandonato la partita.';
+      notifyListeners();
+    }
   }
 
   /// State changes only when the server confirms with SETTED_BET.
@@ -465,11 +470,17 @@ class ClientManager extends ChangeNotifier {
     currentScreen = AppScreenState.gameOver;
   }
 
+  /// The player is out for good: the server has taken their card off the table and out of the turn order.
   void handlePlayerExitGame(PlayerExitGame message) {
+    final game = this.game;
     final player = game?.playerNamed(message.nickname);
-    if (player == null) return;
-    player.playerState = PlayerState.EXIT;
-    serverNotice = '${message.nickname} ha lasciato la partita.';
+    if (game == null || player == null) return;
+    player
+      ..playerState = PlayerState.EXIT
+      ..playedCard = null;
+    game.playerOrder = game.playerOrder.where((p) => p != player).toList();
+    if (game.trickWinner == player.nickname) game.trickWinner = null;
+    serverNotice = '${message.nickname} ha abbandonato la partita.';
   }
 
   void handleTextMessage(TextMessage message) {

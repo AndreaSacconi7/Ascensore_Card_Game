@@ -80,7 +80,7 @@ class _WaitingViewState extends State<WaitingView> with SingleTickerProviderStat
                 label: 'Annulla',
                 icon: Icons.close_rounded,
                 style: AppButtonStyle.secondary,
-                onPressed: manager.leaveQueue,
+                onPressed: manager.leaveGame,
               ),
             ],
           ),
